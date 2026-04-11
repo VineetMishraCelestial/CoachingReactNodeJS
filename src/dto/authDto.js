@@ -43,3 +43,26 @@ export const refreshValidation = [
   body('refreshToken')
     .notEmpty().withMessage('Refresh token is required')
 ];
+
+export const updateProfileValidation = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ max: 100 }).withMessage('Name must be less than 100 characters'),
+  body('email')
+    .optional()
+    .trim()
+    .isEmail().withMessage('Invalid email format')
+    .isLength({ max: 100 }).withMessage('Email must be less than 100 characters'),
+  body('instituteName')
+    .optional()
+    .trim()
+    .isLength({ max: 200 }).withMessage('Institute name must be less than 200 characters'),
+  body('city')
+    .optional()
+    .trim()
+    .isLength({ max: 100 }).withMessage('City must be less than 100 characters'),
+  body('password')
+    .optional()
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+];

@@ -89,6 +89,22 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
+  async updateProfile(userId, data) {
+    const { name, email, instituteName, city, password } = data;
+    
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (instituteName !== undefined) updateData.instituteName = instituteName;
+    if (city !== undefined) updateData.city = city;
+    if (password !== undefined) {
+      updateData.password = await bcrypt.hash(password, 12);
+    }
+
+    const user = await userRepository.update(userId, updateData);
+    return this.sanitizeUser(user);
+  }
+
   generateToken(userId) {
     return jwt.sign({ userId }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
   }
