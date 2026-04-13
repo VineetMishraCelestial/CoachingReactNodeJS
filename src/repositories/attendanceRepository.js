@@ -101,16 +101,6 @@ export class AttendanceRepository {
 
     return attendances;
   }
-}
-      },
-      _count: true
-    });
-
-    return attendances.reduce((acc, curr) => {
-      acc[curr.status] = curr._count;
-      return acc;
-    }, { present: 0, absent: 0, late: 0 });
-  }
 
   async upsert(studentId, classId, date, status) {
     let localDate;

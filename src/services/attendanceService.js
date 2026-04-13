@@ -10,16 +10,8 @@ export class AttendanceService {
       throw new NotFoundError('Class not found');
     }
 
-    const attendanceRecords = records.map(record => ({
-      studentId: record.studentId,
-      classId,
-      teacherId,
-      date: new Date(date),
-      status: record.status
-    }));
-
-    for (const record of attendanceRecords) {
-      await attendanceRepository.upsert(record.studentId, record.classId, record.date, record.status);
+    for (const record of records) {
+      await attendanceRepository.upsert(record.studentId, classId, date, record.status);
     }
 
     return this.getClassAttendance(classId, date);
@@ -31,7 +23,7 @@ export class AttendanceService {
       throw new NotFoundError('Class not found');
     }
 
-    const attendances = await attendanceRepository.findByClassAndDate(classId, date || new Date());
+    const attendances = await attendanceRepository.findByClassAndDate(classId, date);
     const students = classData.students;
 
     return students.map(student => {
@@ -50,10 +42,13 @@ export class AttendanceService {
       throw new NotFoundError('Class not found');
     }
 
+    const monthNum = month || new Date().getMonth() + 1;
+    const yearNum = year || new Date().getFullYear();
+
     return attendanceRepository.getClassStats(
       classId,
-      month || new Date().getMonth() + 1,
-      year || new Date().getFullYear()
+      monthNum,
+      yearNum
     );
   }
 
@@ -63,27 +58,30 @@ export class AttendanceService {
       throw new NotFoundError('Class not found');
     }
 
+    const monthNum = month || new Date().getMonth() + 1;
+    const yearNum = year || new Date().getFullYear();
+
     const attendances = await attendanceRepository.getMonthlyAttendance(
       classId,
-      year || new Date().getFullYear(),
-      month || new Date().getMonth() + 1
+      yearNum,
+      monthNum
     );
 
     const students = classData.students;
-    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
 
     const result = students.map(student => {
       const studentAttendance = attendances.filter(a => a.studentId === student.id);
       const days = [];
       
       for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month - 1, day);
+        const localDate = new Date(yearNum, monthNum - 1, day);
         const record = studentAttendance.find(a => {
           const recordDate = new Date(a.date);
           return recordDate.getDate() === day;
         });
         days.push({
-          date: date.toISOString().split('T')[0],
+          date: `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
           status: record?.status || 'pending'
         });
       }
