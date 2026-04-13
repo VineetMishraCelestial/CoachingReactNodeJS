@@ -57,6 +57,47 @@ export class AttendanceService {
     );
   }
 
+  async getMonthlyAttendance(classId, year, month) {
+    const classData = await classRepository.findById(classId);
+    if (!classData) {
+      throw new NotFoundError('Class not found');
+    }
+
+    const attendances = await attendanceRepository.getMonthlyAttendance(
+      classId,
+      year || new Date().getFullYear(),
+      month || new Date().getMonth() + 1
+    );
+
+    const students = classData.students;
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const result = students.map(student => {
+      const studentAttendance = attendances.filter(a => a.studentId === student.id);
+      const days = [];
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const record = studentAttendance.find(a => {
+          const recordDate = new Date(a.date);
+          return recordDate.getDate() === day;
+        });
+        days.push({
+          date: date.toISOString().split('T')[0],
+          status: record?.status || 'pending'
+        });
+      }
+
+      return {
+        studentId: student.id,
+        name: student.name,
+        days
+      };
+    });
+
+    return result;
+  }
+
   async getStudentAttendance(studentId, month, year) {
     const student = await studentRepository.findById(studentId);
     if (!student) {

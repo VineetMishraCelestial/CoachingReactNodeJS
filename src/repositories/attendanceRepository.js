@@ -83,6 +83,35 @@ export class AttendanceRepository {
     }, { present: 0, absent: 0, late: 0 });
   }
 
+  async getMonthlyAttendance(classId, year, month) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const attendances = await prisma.attendance.findMany({
+      where: {
+        classId,
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: { student: true },
+      orderBy: { date: 'asc' }
+    });
+
+    return attendances;
+  }
+}
+      },
+      _count: true
+    });
+
+    return attendances.reduce((acc, curr) => {
+      acc[curr.status] = curr._count;
+      return acc;
+    }, { present: 0, absent: 0, late: 0 });
+  }
+
   async upsert(studentId, classId, date, status) {
     let localDate;
     if (typeof date === 'string') {
