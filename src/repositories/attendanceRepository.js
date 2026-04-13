@@ -10,9 +10,17 @@ export class AttendanceRepository {
   }
 
   async findByStudentAndDate(studentId, classId, date) {
-    const startOfDay = new Date(date);
+    let localDate;
+    if (typeof date === 'string') {
+      const parts = date.split('-');
+      localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    } else {
+      localDate = new Date(date);
+    }
+    
+    const startOfDay = new Date(localDate);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
+    const endOfDay = new Date(localDate);
     endOfDay.setHours(23, 59, 59, 999);
 
     return prisma.attendance.findFirst({
@@ -28,9 +36,17 @@ export class AttendanceRepository {
   }
 
   async findByClassAndDate(classId, date) {
-    const startOfDay = new Date(date);
+    let localDate;
+    if (typeof date === 'string') {
+      const parts = date.split('-');
+      localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    } else {
+      localDate = new Date(date);
+    }
+    
+    const startOfDay = new Date(localDate);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
+    const endOfDay = new Date(localDate);
     endOfDay.setHours(23, 59, 59, 999);
 
     return prisma.attendance.findMany({
@@ -68,18 +84,24 @@ export class AttendanceRepository {
   }
 
   async upsert(studentId, classId, date, status) {
-    const dateOnly = new Date(date);
-    dateOnly.setHours(0, 0, 0, 0);
+    let localDate;
+    if (typeof date === 'string') {
+      const parts = date.split('-');
+      localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    } else {
+      localDate = new Date(date);
+    }
+    localDate.setHours(0, 0, 0, 0);
 
     return prisma.attendance.upsert({
       where: {
         studentId_classId_date: {
           studentId,
           classId,
-          date: dateOnly
+          date: localDate
         }
       },
-      create: { studentId, classId, date: dateOnly, status },
+      create: { studentId, classId, date: localDate, status },
       update: { status }
     });
   }
