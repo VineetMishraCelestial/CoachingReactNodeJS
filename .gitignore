@@ -13,3 +13,7 @@ dist/
 
 # Prisma generated files
 /src/generated/prisma
+
+# Logs
+error.log
+server.log

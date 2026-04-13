@@ -72,7 +72,6 @@ export class StudentRepository {
   async permanentDelete(id) {
     await prisma.fee.deleteMany({ where: { studentId: id } });
     await prisma.homeworkSubmission.deleteMany({ where: { studentId: id } });
-    await prisma.attendance.deleteMany({ where: { studentId: id } });
     return prisma.student.delete({ where: { id } });
   }
 

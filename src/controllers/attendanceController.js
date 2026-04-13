@@ -23,29 +23,11 @@ export class AttendanceController {
     }
   }
 
-  async getClassStats(req, res, next) {
+  async getClassAttendanceByDate(req, res, next) {
     try {
-      const { classId, month, year } = req.query;
-      const result = await attendanceService.getClassStats(
-        classId,
-        month ? parseInt(month) : undefined,
-        year ? parseInt(year) : undefined
-      );
-      return successResponse(res, result, 'Class attendance stats retrieved');
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getMonthlyAttendance(req, res, next) {
-    try {
-      const { classId, month, year } = req.query;
-      const result = await attendanceService.getMonthlyAttendance(
-        classId,
-        year ? parseInt(year) : undefined,
-        month ? parseInt(month) : undefined
-      );
-      return successResponse(res, result, 'Monthly attendance retrieved');
+      const { classId, date } = req.query;
+      const result = await attendanceService.getClassAttendanceByDate(classId, date);
+      return successResponse(res, result, 'Attendance retrieved');
     } catch (error) {
       next(error);
     }

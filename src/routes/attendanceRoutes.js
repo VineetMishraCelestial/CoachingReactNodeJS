@@ -7,8 +7,7 @@ const router = Router();
 
 router.post('/', validate(markAttendanceValidation), attendanceController.markAttendance);
 router.get('/class', attendanceController.getClassAttendance);
-router.get('/class/monthly', attendanceController.getMonthlyAttendance);
-router.get('/class/stats', attendanceController.getClassStats);
+router.get('/class/date', attendanceController.getClassAttendanceByDate);
 router.get('/student', attendanceController.getStudentAttendance);
 
 export default router;

@@ -36,64 +36,23 @@ export class AttendanceService {
     });
   }
 
-  async getClassStats(classId, month, year) {
+  async getClassAttendanceByDate(classId, date) {
     const classData = await classRepository.findById(classId);
     if (!classData) {
       throw new NotFoundError('Class not found');
     }
 
-    const monthNum = month || new Date().getMonth() + 1;
-    const yearNum = year || new Date().getFullYear();
-
-    return attendanceRepository.getClassStats(
-      classId,
-      monthNum,
-      yearNum
-    );
-  }
-
-  async getMonthlyAttendance(classId, year, month) {
-    const classData = await classRepository.findById(classId);
-    if (!classData) {
-      throw new NotFoundError('Class not found');
-    }
-
-    const monthNum = month || new Date().getMonth() + 1;
-    const yearNum = year || new Date().getFullYear();
-
-    const attendances = await attendanceRepository.getMonthlyAttendance(
-      classId,
-      yearNum,
-      monthNum
-    );
-
+    const attendances = await attendanceRepository.findByClassAndDate(classId, date);
     const students = classData.students;
-    const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
 
-    const result = students.map(student => {
-      const studentAttendance = attendances.filter(a => a.studentId === student.id);
-      const days = [];
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        const localDate = new Date(yearNum, monthNum - 1, day);
-        const record = studentAttendance.find(a => {
-          const recordDate = new Date(a.date);
-          return recordDate.getDate() === day;
-        });
-        days.push({
-          date: `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-          status: record?.status || 'pending'
-        });
-      }
-
+    return students.map(student => {
+      const attendance = attendances.find(a => a.studentId === student.id);
       return {
         studentId: student.id,
         name: student.name,
-        days
+        status: attendance?.status || 'pending'
       };
     });
-
-    return result;
   }
 
   async getStudentAttendance(studentId, month, year) {
