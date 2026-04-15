@@ -28,13 +28,19 @@ export class FeeRepository {
 
   async findByStudent(studentId) {
     const sId = new mongoose.Types.ObjectId(studentId);
-    return Fee.find({ studentId: sId }).sort({ year: -1, month: -1 }).lean();
+    const fees = await Fee.find({ studentId: sId }).sort({ year: -1, month: -1 }).lean();
+    return addId(fees);
   }
 
   async findByClass(classId) {
-    const students = await Student.find({ classId }).lean();
+    const cId = new mongoose.Types.ObjectId(classId);
+    const students = await Student.find({ classId: cId }).lean();
     const ids = students.map(s => s._id);
-    return Fee.find({ studentId: { $in: ids } }).populate('student', '_id name').sort({ year: -1, month: -1 }).lean();
+    const fees = await Fee.find({ studentId: { $in: ids } }).populate('studentId', '_id name classId').sort({ year: -1, month: -1 }).lean();
+    return fees.map(f => ({
+      ...addId(f),
+      student: f.studentId ? addId(f.studentId) : null
+    }));
   }
 
   async findByInstitute(instituteId, filters = {}) {
@@ -43,11 +49,18 @@ export class FeeRepository {
     const students = await Student.find({ instituteId: objId }).lean();
     const ids = students.map(s => s._id);
     const query = { studentId: { $in: ids } };
-    if (classId) query.studentId = { $in: (await Student.find({ classId }).lean()).map(s => s._id) };
+    if (classId) {
+      const cId = new mongoose.Types.ObjectId(classId);
+      query.studentId = { $in: (await Student.find({ classId: cId }).lean()).map(s => s._id) };
+    }
     if (status) query.status = status;
     if (month) query.month = month;
     if (year) query.year = parseInt(year);
-    return Fee.find(query).sort({ createdAt: -1 }).lean();
+    const fees = await Fee.find(query).populate('studentId', '_id name classId').sort({ createdAt: -1 }).lean();
+    return fees.map(f => ({
+      ...addId(f),
+      student: f.studentId ? addId(f.studentId) : null
+    }));
   }
 
   async getPendingCount(instituteId) {

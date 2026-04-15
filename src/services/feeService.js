@@ -68,7 +68,7 @@ export class FeeService {
     const fees = await feeRepository.findByInstitute(instituteId);
 
     return classes.map(cls => {
-      const classFees = fees.filter(f => f.student.classId === cls.id);
+      const classFees = fees.filter(f => f.student?.classId === cls.id);
       const paid = classFees.filter(f => f.status === 'paid').length;
       const pending = classFees.filter(f => f.status === 'pending').length;
 

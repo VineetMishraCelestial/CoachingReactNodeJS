@@ -44,7 +44,7 @@ export class StudentRepository {
     for (const s of students) {
       const fee = await Fee.findOne({ studentId: s._id }).sort({ createdAt: -1 }).lean();
       const attCount = await Attendance.countDocuments({ studentId: s._id });
-      result.push({ ...addId(s), fees: fee ? [addId(fee)] : [], _count: { attendances: attCount } });
+      result.push({ ...addId(s), class: s.classId ? addId(s.classId) : null, fees: fee ? [addId(fee)] : [], _count: { attendances: attCount } });
     }
     return { students: result, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
@@ -65,7 +65,13 @@ export class StudentRepository {
       Student.find({ instituteId: objId, isActive: false }).populate('classId').sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
       Student.countDocuments({ instituteId: objId, isActive: false })
     ]);
-    return { students: addId(students), total, page, limit, totalPages: Math.ceil(total / limit) };
+    return {
+      students: students.map(s => ({ ...addId(s), class: s.classId ? addId(s.classId) : null })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async permanentDelete(id) {
