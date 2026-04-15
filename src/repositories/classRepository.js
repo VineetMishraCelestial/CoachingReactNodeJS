@@ -25,7 +25,12 @@ export class ClassRepository {
     const cls = await Class.findById(id)
       .populate('teacher', '_id name subject mobile email')
       .populate('students', '_id name parentMobile joiningDate').lean();
-    return cls ? addId(cls) : null;
+    if (!cls) return null;
+    return {
+      ...addId(cls),
+      teacher: cls.teacher ? addId(cls.teacher) : null,
+      students: cls.students ? addId(cls.students) : null
+    };
   }
 
   async findByInstitute(instituteId, filters = {}) {
@@ -36,7 +41,11 @@ export class ClassRepository {
     const result = [];
     for (const cls of classes) {
       const count = await Student.countDocuments({ classId: cls._id, isActive: true });
-      result.push({ ...addId(cls), _count: { students: count } });
+      result.push({
+        ...addId(cls),
+        teacher: cls.teacher ? addId(cls.teacher) : null,
+        _count: { students: count }
+      });
     }
     return result;
   }
@@ -53,8 +62,11 @@ export class ClassRepository {
 
   async findTrash(instituteId) {
     const objId = new mongoose.Types.ObjectId(instituteId);
-    const classes = await Class.find({ instituteId: objId, isActive: false }).populate('teacher').sort({ updatedAt: -1 }).lean();
-    return addId(classes);
+    const classes = await Class.find({ instituteId: objId, isActive: false }).populate('teacher', '_id name subject').sort({ updatedAt: -1 }).lean();
+    return classes.map(c => ({
+      ...addId(c),
+      teacher: c.teacher ? addId(c.teacher) : null
+    }));
   }
 
   async permanentDelete(id) {
