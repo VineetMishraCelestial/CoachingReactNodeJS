@@ -1,31 +1,35 @@
 import Fee from '../models/Fee.js';
 import Student from '../models/Student.js';
+import { toPlainObject } from '../utils/helpers.js';
 
 export class FeeRepository {
   async create(data) {
     const fee = new Fee(data);
     const saved = await fee.save();
-    return saved.toObject();
+    return toPlainObject(saved.toObject());
   }
 
   async findById(id) {
-    return Fee.findById(id).populate('student').lean();
+    const fee = await Fee.findById(id).populate('student').lean();
+    return toPlainObject(fee);
   }
 
   async findByStudent(studentId) {
-    return Fee.find({ studentId })
+    const fees = await Fee.find({ studentId })
       .sort({ year: -1, month: -1 })
       .lean();
+    return toPlainObject(fees);
   }
 
   async findByClass(classId) {
     const students = await Student.find({ classId }).lean();
     const studentIds = students.map(s => s._id);
     
-    return Fee.find({ studentId: { $in: studentIds } })
+    const fees = await Fee.find({ studentId: { $in: studentIds } })
       .populate('student', '_id name')
       .sort({ year: -1, month: -1 })
       .lean();
+    return toPlainObject(fees);
   }
 
   async findByInstitute(instituteId, filters = {}) {
@@ -51,7 +55,7 @@ export class FeeRepository {
       .sort({ createdAt: -1 })
       .lean();
 
-    const enrichedFees = fees.map(fee => ({
+    const enrichedFees = fees.map(fee => toPlainObject({
       ...fee,
       student: {
         ...fee.student,
@@ -94,7 +98,8 @@ export class FeeRepository {
     const existing = await Fee.findOne({ studentId, month, year }).lean();
 
     if (existing) {
-      return Fee.findByIdAndUpdate(existing._id, data, { new: true }).lean();
+      const updated = await Fee.findByIdAndUpdate(existing._id, data, { new: true }).lean();
+      return toPlainObject(updated);
     } else {
       const fee = new Fee({
         studentId,
@@ -103,7 +108,7 @@ export class FeeRepository {
         ...data
       });
       const saved = await fee.save();
-      return saved.toObject();
+      return toPlainObject(saved.toObject());
     }
   }
 }

@@ -1,22 +1,26 @@
 import User from '../models/User.js';
+import { toPlainObject } from '../utils/helpers.js';
 
 export class UserRepository {
   async create(data) {
     const user = new User(data);
     const saved = await user.save();
-    return saved.toObject();
+    return toPlainObject(saved.toObject());
   }
 
   async findByMobile(mobile) {
-    return User.findOne({ mobile }).lean();
+    const user = await User.findOne({ mobile }).lean();
+    return toPlainObject(user);
   }
 
   async findById(id) {
-    return User.findById(id).lean();
+    const user = await User.findById(id).lean();
+    return toPlainObject(user);
   }
 
   async update(id, data) {
-    return User.findByIdAndUpdate(id, data, { new: true }).lean();
+    const user = await User.findByIdAndUpdate(id, data, { new: true }).lean();
+    return toPlainObject(user);
   }
 
   async findAll(filters = {}, pagination = {}) {
@@ -32,11 +36,12 @@ export class UserRepository {
       User.countDocuments(filters)
     ]);
 
-    return { users, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { users: toPlainObject(users), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findAllInstitutes() {
-    return User.find({ role: 'institute', isActive: true }).select('_id').lean();
+    const institutes = await User.find({ role: 'institute', isActive: true }).select('_id').lean();
+    return toPlainObject(institutes);
   }
 }
 

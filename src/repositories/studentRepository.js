@@ -2,16 +2,18 @@ import Student from '../models/Student.js';
 import Fee from '../models/Fee.js';
 import Attendance from '../models/Attendance.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
+import { toPlainObject } from '../utils/helpers.js';
 
 export class StudentRepository {
   async create(data) {
     const student = new Student(data);
     const saved = await student.save();
-    return saved.toObject();
+    return toPlainObject(saved.toObject());
   }
 
   async findById(id) {
-    return Student.findById(id).populate('class').lean();
+    const student = await Student.findById(id).populate('class').lean();
+    return toPlainObject(student);
   }
 
   async findByInstitute(instituteId, filters = {}, pagination = {}) {
@@ -36,8 +38,8 @@ export class StudentRepository {
       const attendanceCount = await Attendance.countDocuments({ studentId: student._id });
       
       enrichedStudents.push({
-        ...student,
-        fees: latestFee ? [latestFee] : [],
+        ...toPlainObject(student),
+        fees: latestFee ? [toPlainObject(latestFee)] : [],
         _count: { attendances: attendanceCount }
       });
     }
@@ -46,11 +48,13 @@ export class StudentRepository {
   }
 
   async update(id, data) {
-    return Student.findByIdAndUpdate(id, data, { new: true }).lean();
+    const student = await Student.findByIdAndUpdate(id, data, { new: true }).lean();
+    return toPlainObject(student);
   }
 
   async delete(id) {
-    return Student.findByIdAndDelete(id).lean();
+    const student = await Student.findByIdAndDelete(id).lean();
+    return toPlainObject(student);
   }
 
   async findTrash(instituteId, pagination = {}) {
@@ -67,13 +71,14 @@ export class StudentRepository {
       Student.countDocuments({ instituteId, isActive: false })
     ]);
 
-    return { students, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { students: toPlainObject(students), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async permanentDelete(id) {
     await Fee.deleteMany({ studentId: id });
     await HomeworkSubmission.deleteMany({ studentId: id });
-    return Student.findByIdAndDelete(id).lean();
+    const student = await Student.findByIdAndDelete(id).lean();
+    return toPlainObject(student);
   }
 
   async getAttendanceStats(studentId, month, year) {

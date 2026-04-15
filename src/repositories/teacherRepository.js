@@ -1,19 +1,22 @@
 import Teacher from '../models/Teacher.js';
 import Class from '../models/Class.js';
+import { toPlainObject } from '../utils/helpers.js';
 
 export class TeacherRepository {
   async create(data) {
     const teacher = new Teacher(data);
     const saved = await teacher.save();
-    return saved.toObject();
+    return toPlainObject(saved.toObject());
   }
 
   async findById(id) {
-    return Teacher.findById(id).lean();
+    const teacher = await Teacher.findById(id).lean();
+    return toPlainObject(teacher);
   }
 
   async findByMobile(mobile) {
-    return Teacher.findOne({ mobile }).lean();
+    const teacher = await Teacher.findOne({ mobile }).lean();
+    return toPlainObject(teacher);
   }
 
   async findByInstitute(instituteId, filters = {}) {
@@ -25,28 +28,32 @@ export class TeacherRepository {
       const classes = await Class.find({ teacherId: teacher._id, isActive: true })
         .select('_id name subject')
         .lean();
-      teacher.classes = classes;
+      teacher.classes = toPlainObject(classes);
     }
 
-    return teachers;
+    return toPlainObject(teachers);
   }
 
   async update(id, data) {
-    return Teacher.findByIdAndUpdate(id, data, { new: true }).lean();
+    const teacher = await Teacher.findByIdAndUpdate(id, data, { new: true }).lean();
+    return toPlainObject(teacher);
   }
 
   async delete(id) {
-    return Teacher.findByIdAndDelete(id).lean();
+    const teacher = await Teacher.findByIdAndDelete(id).lean();
+    return toPlainObject(teacher);
   }
 
   async findTrash(instituteId) {
-    return Teacher.find({ instituteId, isActive: false })
+    const teachers = await Teacher.find({ instituteId, isActive: false })
       .sort({ updatedAt: -1 })
       .lean();
+    return toPlainObject(teachers);
   }
 
   async permanentDelete(id) {
-    return Teacher.findByIdAndDelete(id).lean();
+    const teacher = await Teacher.findByIdAndDelete(id).lean();
+    return toPlainObject(teacher);
   }
 }
 

@@ -1,4 +1,5 @@
 import Attendance from '../models/Attendance.js';
+import { toPlainObject } from '../utils/helpers.js';
 
 export class AttendanceRepository {
   async findByClassAndDate(classId, date) {
@@ -13,13 +14,15 @@ export class AttendanceRepository {
     const startOfDay = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     const endOfDay = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 23, 59, 59, 999));
 
-    return Attendance.find({
+    const attendances = await Attendance.find({
       classId,
       date: {
         $gte: startOfDay,
         $lte: endOfDay
       }
     }).populate('student').lean();
+    
+    return toPlainObject(attendances);
   }
 
   async upsert(studentId, classId, date, status) {
@@ -35,7 +38,8 @@ export class AttendanceRepository {
     const existing = await Attendance.findOne({ studentId, classId, date: localDate }).lean();
 
     if (existing) {
-      return Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
+      const updated = await Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
+      return toPlainObject(updated);
     } else {
       const attendance = new Attendance({
         studentId,
@@ -44,7 +48,7 @@ export class AttendanceRepository {
         status
       });
       const saved = await attendance.save();
-      return saved.toObject();
+      return toPlainObject(saved.toObject());
     }
   }
 }

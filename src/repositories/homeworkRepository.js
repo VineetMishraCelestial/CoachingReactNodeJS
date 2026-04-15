@@ -1,21 +1,23 @@
 import Homework from '../models/Homework.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
+import { toPlainObject } from '../utils/helpers.js';
 
 export class HomeworkRepository {
   async create(data) {
     const homework = new Homework(data);
     const saved = await homework.save();
-    return saved.toObject();
+    return toPlainObject(saved.toObject());
   }
 
   async findById(id) {
-    return Homework.findById(id)
+    const homework = await Homework.findById(id)
       .populate('class')
       .populate({
         path: 'submissions',
         populate: { path: 'student' }
       })
       .lean();
+    return toPlainObject(homework);
   }
 
   async findByClass(classId, filters = {}) {
@@ -28,8 +30,8 @@ export class HomeworkRepository {
     for (const hw of homeworks) {
       const submissionCount = await HomeworkSubmission.countDocuments({ homeworkId: hw._id });
       result.push({
-        ...hw,
-        submissions: hw.submissions,
+        ...toPlainObject(hw),
+        submissions: toPlainObject(hw.submissions),
         _count: { submissions: submissionCount }
       });
     }
@@ -38,22 +40,25 @@ export class HomeworkRepository {
   }
 
   async update(id, data) {
-    return Homework.findByIdAndUpdate(id, data, { new: true }).lean();
+    const homework = await Homework.findByIdAndUpdate(id, data, { new: true }).lean();
+    return toPlainObject(homework);
   }
 
   async delete(id) {
     await HomeworkSubmission.deleteMany({ homeworkId: id });
-    return Homework.findByIdAndDelete(id).lean();
+    const homework = await Homework.findByIdAndDelete(id).lean();
+    return toPlainObject(homework);
   }
 
   async addSubmission(homeworkId, studentId) {
     const existing = await HomeworkSubmission.findOne({ homeworkId, studentId }).lean();
 
     if (existing) {
-      return HomeworkSubmission.findByIdAndUpdate(existing._id, {
+      const submission = await HomeworkSubmission.findByIdAndUpdate(existing._id, {
         status: 'submitted',
         submittedAt: new Date()
       }, { new: true }).lean();
+      return toPlainObject(submission);
     } else {
       const submission = new HomeworkSubmission({
         homeworkId,
@@ -62,7 +67,7 @@ export class HomeworkRepository {
         submittedAt: new Date()
       });
       const saved = await submission.save();
-      return saved.toObject();
+      return toPlainObject(saved.toObject());
     }
   }
 }
