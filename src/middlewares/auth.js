@@ -22,7 +22,7 @@ export const authenticate = async (req, res, next) => {
       throw new UnauthorizedError('User not found or inactive');
     }
 
-    req.user = user;
+    req.user = { ...user, id: user._id.toString() };
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {

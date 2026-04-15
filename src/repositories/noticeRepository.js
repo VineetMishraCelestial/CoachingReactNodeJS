@@ -1,42 +1,31 @@
 import mongoose from 'mongoose';
 import Notice from '../models/Notice.js';
-import { toPlainObject } from '../utils/helpers.js';
 
 export class NoticeRepository {
   async create(data) {
-    if (data.instituteId) {
-      data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
-    }
-    const notice = new Notice(data);
-    const saved = await notice.save();
-    return toPlainObject(saved.toObject());
+    if (data.instituteId) data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
+    const n = new Notice(data);
+    const saved = await n.save();
+    return saved.toObject();
   }
 
   async findById(id) {
-    const notice = await Notice.findById(id).lean();
-    return toPlainObject(notice);
+    return Notice.findById(id).lean();
   }
 
   async findByInstitute(instituteId, filters = {}) {
-    const { classId } = filters;
-    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
-    const query = { instituteId: instituteObjId };
-    if (classId) query.classId = classId;
-
-    const notices = await Notice.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
-    return toPlainObject(notices);
+    const objId = new mongoose.Types.ObjectId(instituteId);
+    const query = { instituteId: objId };
+    if (filters.classId) query.classId = filters.classId;
+    return Notice.find(query).sort({ createdAt: -1 }).lean();
   }
 
   async update(id, data) {
-    const notice = await Notice.findByIdAndUpdate(id, data, { new: true }).lean();
-    return toPlainObject(notice);
+    return Notice.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async delete(id) {
-    const notice = await Notice.findByIdAndDelete(id).lean();
-    return toPlainObject(notice);
+    return Notice.findByIdAndDelete(id).lean();
   }
 }
 

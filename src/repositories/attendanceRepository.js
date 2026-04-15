@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import Attendance from '../models/Attendance.js';
-import { toPlainObject } from '../utils/helpers.js';
 
 export class AttendanceRepository {
   async findByClassAndDate(classId, date) {
@@ -11,22 +10,9 @@ export class AttendanceRepository {
     } else {
       localDate = new Date(date);
     }
-    
-    const startOfDay = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
-    const endOfDay = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 23, 59, 59, 999));
-
-    const attendances = await Attendance.find({
-      classId,
-      date: {
-        $gte: startOfDay,
-        $lte: endOfDay
-      }
-    }).populate('student').lean();
-    
-    return attendances.map(a => ({
-      ...toPlainObject(a),
-      student: a.student ? toPlainObject(a.student) : null
-    }));
+    const start = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
+    const end = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 23, 59, 59, 999));
+    return Attendance.find({ classId, date: { $gte: start, $lte: end } }).populate('student').lean();
   }
 
   async upsert(studentId, classId, date, status) {
@@ -38,25 +24,15 @@ export class AttendanceRepository {
       localDate = new Date(date);
       localDate = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     }
-
-    const studentObjId = new mongoose.Types.ObjectId(studentId);
-    const classObjId = new mongoose.Types.ObjectId(classId);
-    
-    const existing = await Attendance.findOne({ studentId: studentObjId, classId: classObjId, date: localDate }).lean();
-
+    const sId = new mongoose.Types.ObjectId(studentId);
+    const cId = new mongoose.Types.ObjectId(classId);
+    const existing = await Attendance.findOne({ studentId: sId, classId: cId, date: localDate }).lean();
     if (existing) {
-      const updated = await Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
-      return toPlainObject(updated);
-    } else {
-      const attendance = new Attendance({
-        studentId: studentObjId,
-        classId: classObjId,
-        date: localDate,
-        status
-      });
-      const saved = await attendance.save();
-      return toPlainObject(saved.toObject());
+      return Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
     }
+    const a = new Attendance({ studentId: sId, classId: cId, date: localDate, status });
+    const saved = await a.save();
+    return saved.toObject();
   }
 }
 

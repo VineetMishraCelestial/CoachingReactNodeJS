@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import Teacher from '../models/Teacher.js';
 import Class from '../models/Class.js';
-import { toPlainObject } from '../utils/helpers.js';
 
 export class TeacherRepository {
   async create(data) {
@@ -10,60 +9,45 @@ export class TeacherRepository {
     }
     const teacher = new Teacher(data);
     const saved = await teacher.save();
-    return toPlainObject(saved.toObject());
+    return saved.toObject();
   }
 
   async findById(id) {
-    const teacher = await Teacher.findById(id).lean();
-    return toPlainObject(teacher);
+    return Teacher.findById(id).lean();
   }
 
   async findByMobile(mobile) {
-    const teacher = await Teacher.findOne({ mobile }).lean();
-    return toPlainObject(teacher);
+    return Teacher.findOne({ mobile }).lean();
   }
 
   async findByInstitute(instituteId, filters = {}) {
-    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
-    const teachers = await Teacher.find({ instituteId: instituteObjId, isActive: true, ...filters })
-      .sort({ createdAt: -1 })
-      .lean();
-
+    const objId = new mongoose.Types.ObjectId(instituteId);
+    const teachers = await Teacher.find({ instituteId: objId, isActive: true, ...filters })
+      .sort({ createdAt: -1 }).lean();
+    
     const result = [];
-    for (const teacher of teachers) {
-      const classes = await Class.find({ teacherId: teacher._id, isActive: true })
-        .select('_id name subject')
-        .lean();
-      result.push({
-        ...toPlainObject(teacher),
-        classes: toPlainObject(classes)
-      });
+    for (const t of teachers) {
+      const classes = await Class.find({ teacherId: t._id, isActive: true }).select('_id name subject').lean();
+      result.push({ ...t, classes, id: t._id.toString() });
     }
-
     return result;
   }
 
   async update(id, data) {
-    const teacher = await Teacher.findByIdAndUpdate(id, data, { new: true }).lean();
-    return toPlainObject(teacher);
+    return Teacher.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async delete(id) {
-    const teacher = await Teacher.findByIdAndDelete(id).lean();
-    return toPlainObject(teacher);
+    return Teacher.findByIdAndDelete(id).lean();
   }
 
   async findTrash(instituteId) {
-    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
-    const teachers = await Teacher.find({ instituteId: instituteObjId, isActive: false })
-      .sort({ updatedAt: -1 })
-      .lean();
-    return toPlainObject(teachers);
+    const objId = new mongoose.Types.ObjectId(instituteId);
+    return Teacher.find({ instituteId: objId, isActive: false }).sort({ updatedAt: -1 }).lean();
   }
 
   async permanentDelete(id) {
-    const teacher = await Teacher.findByIdAndDelete(id).lean();
-    return toPlainObject(teacher);
+    return Teacher.findByIdAndDelete(id).lean();
   }
 }
 

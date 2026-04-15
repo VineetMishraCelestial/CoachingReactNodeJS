@@ -3,106 +3,70 @@ import Student from '../models/Student.js';
 import Fee from '../models/Fee.js';
 import Attendance from '../models/Attendance.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
-import { toPlainObject } from '../utils/helpers.js';
 
 export class StudentRepository {
   async create(data) {
-    if (data.instituteId) {
-      data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
-    }
-    if (data.classId) {
-      data.classId = new mongoose.Types.ObjectId(data.classId);
-    }
-    const student = new Student(data);
-    const saved = await student.save();
-    return toPlainObject(saved.toObject());
+    if (data.instituteId) data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
+    if (data.classId) data.classId = new mongoose.Types.ObjectId(data.classId);
+    const s = new Student(data);
+    const saved = await s.save();
+    return saved.toObject();
   }
 
   async findById(id) {
-    const student = await Student.findById(id).populate('class').lean();
-    return toPlainObject(student);
+    return Student.findById(id).populate('class').lean();
   }
 
   async findByInstitute(instituteId, filters = {}, pagination = {}) {
     const { page = 1, limit = 20 } = pagination;
     const skip = (page - 1) * limit;
-    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const objId = new mongoose.Types.ObjectId(instituteId);
 
     const [students, total] = await Promise.all([
-      Student.find({ instituteId: instituteObjId, isActive: true, ...filters })
-        .populate('class')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Student.countDocuments({ instituteId: instituteObjId, isActive: true, ...filters })
+      Student.find({ instituteId: objId, isActive: true, ...filters })
+        .populate('class').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Student.countDocuments({ instituteId: objId, isActive: true, ...filters })
     ]);
 
-    const enrichedStudents = [];
-    for (const student of students) {
-      const latestFee = await Fee.findOne({ studentId: student._id })
-        .sort({ createdAt: -1 })
-        .lean();
-      const attendanceCount = await Attendance.countDocuments({ studentId: student._id });
-      
-      enrichedStudents.push({
-        ...toPlainObject(student),
-        fees: latestFee ? [toPlainObject(latestFee)] : [],
-        _count: { attendances: attendanceCount }
-      });
+    const result = [];
+    for (const s of students) {
+      const fee = await Fee.findOne({ studentId: s._id }).sort({ createdAt: -1 }).lean();
+      const attCount = await Attendance.countDocuments({ studentId: s._id });
+      result.push({ ...s, fees: fee ? [fee] : [], _count: { attendances: attCount }, id: s._id.toString() });
     }
-
-    return { students: enrichedStudents, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { students: result, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async update(id, data) {
-    const student = await Student.findByIdAndUpdate(id, data, { new: true }).lean();
-    return toPlainObject(student);
+    return Student.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async delete(id) {
-    const student = await Student.findByIdAndDelete(id).lean();
-    return toPlainObject(student);
+    return Student.findByIdAndDelete(id).lean();
   }
 
   async findTrash(instituteId, pagination = {}) {
     const { page = 1, limit = 20 } = pagination;
     const skip = (page - 1) * limit;
-    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
-
+    const objId = new mongoose.Types.ObjectId(instituteId);
     const [students, total] = await Promise.all([
-      Student.find({ instituteId: instituteObjId, isActive: false })
-        .populate('class')
-        .sort({ updatedAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Student.countDocuments({ instituteId: instituteObjId, isActive: false })
+      Student.find({ instituteId: objId, isActive: false }).populate('class').sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
+      Student.countDocuments({ instituteId: objId, isActive: false })
     ]);
-
-    return { students: toPlainObject(students), total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { students, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async permanentDelete(id) {
     await Fee.deleteMany({ studentId: id });
     await HomeworkSubmission.deleteMany({ studentId: id });
-    const student = await Student.findByIdAndDelete(id).lean();
-    return toPlainObject(student);
+    return Student.findByIdAndDelete(id).lean();
   }
 
   async getAttendanceStats(studentId, month, year) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-
-    const attendances = await Attendance.countDocuments({
-      studentId,
-      date: {
-        $gte: startDate,
-        $lte: endDate
-      }
-    });
-
-    return { attended: attendances, total: endDate.getDate() };
+    const count = await Attendance.countDocuments({ studentId, date: { $gte: startDate, $lte: endDate } });
+    return { attended: count, total: endDate.getDate() };
   }
 }
 

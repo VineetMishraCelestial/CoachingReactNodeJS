@@ -1,26 +1,22 @@
 import User from '../models/User.js';
-import { toPlainObject } from '../utils/helpers.js';
 
 export class UserRepository {
   async create(data) {
     const user = new User(data);
     const saved = await user.save();
-    return toPlainObject(saved.toObject());
+    return saved.toObject();
   }
 
   async findByMobile(mobile) {
-    const user = await User.findOne({ mobile }).lean();
-    return toPlainObject(user);
+    return User.findOne({ mobile }).lean();
   }
 
   async findById(id) {
-    const user = await User.findById(id).lean();
-    return toPlainObject(user);
+    return User.findById(id).lean();
   }
 
   async update(id, data) {
-    const user = await User.findByIdAndUpdate(id, data, { new: true }).lean();
-    return toPlainObject(user);
+    return User.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async findAll(filters = {}, pagination = {}) {
@@ -28,20 +24,15 @@ export class UserRepository {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      User.find(filters)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      User.find(filters).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       User.countDocuments(filters)
     ]);
 
-    return { users: toPlainObject(users), total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { users, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findAllInstitutes() {
-    const institutes = await User.find({ role: 'institute', isActive: true }).select('_id').lean();
-    return toPlainObject(institutes);
+    return User.find({ role: 'institute', isActive: true }).select('_id').lean();
   }
 }
 
