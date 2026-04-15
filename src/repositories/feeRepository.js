@@ -22,7 +22,8 @@ export class FeeRepository {
   }
 
   async findByStudent(studentId) {
-    return Fee.find({ studentId }).sort({ year: -1, month: -1 }).lean();
+    const sId = new mongoose.Types.ObjectId(studentId);
+    return Fee.find({ studentId: sId }).sort({ year: -1, month: -1 }).lean();
   }
 
   async findByClass(classId) {
@@ -63,7 +64,8 @@ export class FeeRepository {
     const sId = new mongoose.Types.ObjectId(studentId);
     const existing = await Fee.findOne({ studentId: sId, month, year }).lean();
     if (existing) {
-      return Fee.findByIdAndUpdate(existing._id, data, { new: true }).lean();
+      const updated = await Fee.findByIdAndUpdate(existing._id, data, { new: true }).lean();
+      return updated ? addId(updated) : null;
     }
     const f = new Fee({ studentId: sId, month, year, ...data });
     const saved = await f.save();

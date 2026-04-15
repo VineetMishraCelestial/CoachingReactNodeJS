@@ -21,8 +21,12 @@ export class StudentRepository {
   }
 
   async findById(id) {
-    const s = await Student.findById(id).populate('class').lean();
-    return s ? addId(s) : null;
+    const s = await Student.findById(id).populate('classId').lean();
+    if (!s) return null;
+    return {
+      ...addId(s),
+      class: s.classId ? addId(s.classId) : null
+    };
   }
 
   async findByInstitute(instituteId, filters = {}, pagination = {}) {
@@ -32,7 +36,7 @@ export class StudentRepository {
 
     const [students, total] = await Promise.all([
       Student.find({ instituteId: objId, isActive: true, ...filters })
-        .populate('class').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        .populate('classId').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Student.countDocuments({ instituteId: objId, isActive: true, ...filters })
     ]);
 
@@ -58,7 +62,7 @@ export class StudentRepository {
     const skip = (page - 1) * limit;
     const objId = new mongoose.Types.ObjectId(instituteId);
     const [students, total] = await Promise.all([
-      Student.find({ instituteId: objId, isActive: false }).populate('class').sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
+      Student.find({ instituteId: objId, isActive: false }).populate('classId').sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
       Student.countDocuments({ instituteId: objId, isActive: false })
     ]);
     return { students: addId(students), total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -71,9 +75,10 @@ export class StudentRepository {
   }
 
   async getAttendanceStats(studentId, month, year) {
+    const sId = new mongoose.Types.ObjectId(studentId);
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-    const count = await Attendance.countDocuments({ studentId, date: { $gte: startDate, $lte: endDate } });
+    const count = await Attendance.countDocuments({ studentId: sId, date: { $gte: startDate, $lte: endDate } });
     return { attended: count, total: endDate.getDate() };
   }
 }
