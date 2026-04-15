@@ -26,15 +26,16 @@ export class StudentRepository {
   async findByInstitute(instituteId, filters = {}, pagination = {}) {
     const { page = 1, limit = 20 } = pagination;
     const skip = (page - 1) * limit;
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
 
     const [students, total] = await Promise.all([
-      Student.find({ instituteId, isActive: true, ...filters })
+      Student.find({ instituteId: instituteObjId, isActive: true, ...filters })
         .populate('class')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Student.countDocuments({ instituteId, isActive: true, ...filters })
+      Student.countDocuments({ instituteId: instituteObjId, isActive: true, ...filters })
     ]);
 
     const enrichedStudents = [];
@@ -67,15 +68,16 @@ export class StudentRepository {
   async findTrash(instituteId, pagination = {}) {
     const { page = 1, limit = 20 } = pagination;
     const skip = (page - 1) * limit;
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
 
     const [students, total] = await Promise.all([
-      Student.find({ instituteId, isActive: false })
+      Student.find({ instituteId: instituteObjId, isActive: false })
         .populate('class')
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Student.countDocuments({ instituteId, isActive: false })
+      Student.countDocuments({ instituteId: instituteObjId, isActive: false })
     ]);
 
     return { students: toPlainObject(students), total, page, limit, totalPages: Math.ceil(total / limit) };

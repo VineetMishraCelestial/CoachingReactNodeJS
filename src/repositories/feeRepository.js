@@ -38,7 +38,8 @@ export class FeeRepository {
 
   async findByInstitute(instituteId, filters = {}) {
     const { classId, status, month, year } = filters;
-    const students = await Student.find({ instituteId }).lean();
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const students = await Student.find({ instituteId: instituteObjId }).lean();
     const studentIds = students.map(s => s._id);
     
     const studentMap = {};
@@ -71,7 +72,8 @@ export class FeeRepository {
   }
 
   async getPendingCount(instituteId) {
-    const students = await Student.find({ instituteId }).lean();
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const students = await Student.find({ instituteId: instituteObjId }).lean();
     const studentIds = students.map(s => s._id);
     
     return Fee.countDocuments({
@@ -81,7 +83,8 @@ export class FeeRepository {
   }
 
   async getCollectionStats(instituteId) {
-    const students = await Student.find({ instituteId }).lean();
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const students = await Student.find({ instituteId: instituteObjId }).lean();
     const studentIds = students.map(s => s._id);
     
     const fees = await Fee.find({ studentId: { $in: studentIds } })

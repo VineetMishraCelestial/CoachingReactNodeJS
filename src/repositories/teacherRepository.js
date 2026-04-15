@@ -24,7 +24,8 @@ export class TeacherRepository {
   }
 
   async findByInstitute(instituteId, filters = {}) {
-    const teachers = await Teacher.find({ instituteId, isActive: true, ...filters })
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const teachers = await Teacher.find({ instituteId: instituteObjId, isActive: true, ...filters })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -53,7 +54,8 @@ export class TeacherRepository {
   }
 
   async findTrash(instituteId) {
-    const teachers = await Teacher.find({ instituteId, isActive: false })
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const teachers = await Teacher.find({ instituteId: instituteObjId, isActive: false })
       .sort({ updatedAt: -1 })
       .lean();
     return toPlainObject(teachers);

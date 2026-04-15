@@ -19,7 +19,8 @@ export class NoticeRepository {
 
   async findByInstitute(instituteId, filters = {}) {
     const { classId } = filters;
-    const query = { instituteId };
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const query = { instituteId: instituteObjId };
     if (classId) query.classId = classId;
 
     const notices = await Notice.find(query)

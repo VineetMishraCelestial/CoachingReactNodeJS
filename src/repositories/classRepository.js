@@ -28,7 +28,8 @@ export class ClassRepository {
   }
 
   async findByInstitute(instituteId, filters = {}) {
-    const classes = await Class.find({ instituteId, isActive: true, ...filters })
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const classes = await Class.find({ instituteId: instituteObjId, isActive: true, ...filters })
       .populate('teacher', '_id name subject')
       .sort({ createdAt: -1 })
       .lean();
@@ -41,6 +42,18 @@ export class ClassRepository {
         _count: { students: studentCount }
       });
     }
+
+    return result;
+  }
+
+  async findTrash(instituteId) {
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const classes = await Class.find({ instituteId: instituteObjId, isActive: false })
+      .populate('teacher')
+      .sort({ updatedAt: -1 })
+      .lean();
+    return toPlainObject(classes);
+  }
 
     return result;
   }
