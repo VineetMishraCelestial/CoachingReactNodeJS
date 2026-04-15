@@ -28,7 +28,8 @@ export class SyllabusRepository {
   }
 
   async findByClass(classId) {
-    const syllabi = await Syllabus.find({ classId }).sort({ createdAt: 1 }).lean();
+    const cId = new mongoose.Types.ObjectId(classId);
+    const syllabi = await Syllabus.find({ classId: cId }).sort({ createdAt: 1 }).lean();
     const result = [];
     for (const syllabus of syllabi) {
       const syllabusWithId = addId(syllabus);
@@ -98,7 +99,8 @@ export class SyllabusRepository {
   }
 
   async getProgressStats(classId) {
-    const syllabi = await Syllabus.find({ classId }).select('status').lean();
+    const cId = new mongoose.Types.ObjectId(classId);
+    const syllabi = await Syllabus.find({ classId: cId }).select('status').lean();
     const subs = await Subject.find({ syllabusId: { $in: syllabi.map(s => s._id) } }).lean();
     const done = subs.filter(s => s.status === 'done').length;
     const ongoing = subs.filter(s => s.status === 'ongoing').length;

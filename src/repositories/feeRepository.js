@@ -18,7 +18,12 @@ export class FeeRepository {
   }
 
   async findById(id) {
-    return Fee.findById(id).populate('student').lean();
+    const fee = await Fee.findById(id).populate('studentId').lean();
+    if (!fee) return null;
+    return {
+      ...addId(fee),
+      student: fee.studentId ? addId(fee.studentId) : null
+    };
   }
 
   async findByStudent(studentId) {

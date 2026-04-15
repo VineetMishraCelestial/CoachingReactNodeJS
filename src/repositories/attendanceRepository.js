@@ -19,10 +19,11 @@ export class AttendanceRepository {
     }
     const start = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     const end = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 23, 59, 59, 999));
-    const result = await Attendance.find({ classId, date: { $gte: start, $lte: end } }).populate('student').lean();
+    const cId = new mongoose.Types.ObjectId(classId);
+    const result = await Attendance.find({ classId: cId, date: { $gte: start, $lte: end } }).populate('studentId').lean();
     return result.map(a => ({
       ...addId(a),
-      student: a.student ? addId(a.student) : null
+      student: a.studentId ? addId(a.studentId) : null
     }));
   }
 

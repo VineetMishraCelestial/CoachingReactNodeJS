@@ -18,12 +18,18 @@ export class HomeworkRepository {
   }
 
   async findById(id) {
-    const h = await Homework.findById(id).populate('class').populate({ path: 'submissions', populate: { path: 'student' } }).lean();
-    return h ? addId(h) : null;
+    const h = await Homework.findById(id).populate('classId').populate({ path: 'submissions', populate: { path: 'studentId' } }).lean();
+    if (!h) return null;
+    return {
+      ...addId(h),
+      class: h.classId ? addId(h.classId) : null,
+      submissions: addId(h.submissions)
+    };
   }
 
   async findByClass(classId, filters = {}) {
-    const homeworks = await Homework.find({ classId, ...filters }).populate({ path: 'submissions' }).sort({ createdAt: -1 }).lean();
+    const cId = new mongoose.Types.ObjectId(classId);
+    const homeworks = await Homework.find({ classId: cId, ...filters }).populate({ path: 'submissions', populate: { path: 'studentId' } }).sort({ createdAt: -1 }).lean();
     const result = [];
     for (const h of homeworks) {
       const count = await HomeworkSubmission.countDocuments({ homeworkId: h._id });
