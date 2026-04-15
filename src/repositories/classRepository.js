@@ -23,13 +23,16 @@ export class ClassRepository {
 
   async findById(id) {
     const cls = await Class.findById(id)
-      .populate('teacherId', '_id name subject mobile email')
-      .populate('students', '_id name parentMobile joiningDate').lean();
+      .populate('teacherId', '_id name subject mobile email').lean();
     if (!cls) return null;
+    
+    const students = await Student.find({ classId: cls._id, isActive: true })
+      .select('_id name parentMobile joiningDate').lean();
+    
     return {
       ...addId(cls),
       teacher: cls.teacherId ? addId(cls.teacherId) : null,
-      students: cls.students ? addId(cls.students) : null
+      students: addId(students)
     };
   }
 
