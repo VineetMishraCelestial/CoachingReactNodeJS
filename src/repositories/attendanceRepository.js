@@ -22,7 +22,10 @@ export class AttendanceRepository {
       }
     }).populate('student').lean();
     
-    return toPlainObject(attendances);
+    return attendances.map(a => ({
+      ...toPlainObject(a),
+      student: a.student ? toPlainObject(a.student) : null
+    }));
   }
 
   async upsert(studentId, classId, date, status) {

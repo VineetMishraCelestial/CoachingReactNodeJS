@@ -24,14 +24,18 @@ export class TeacherRepository {
       .sort({ createdAt: -1 })
       .lean();
 
+    const result = [];
     for (const teacher of teachers) {
       const classes = await Class.find({ teacherId: teacher._id, isActive: true })
         .select('_id name subject')
         .lean();
-      teacher.classes = toPlainObject(classes);
+      result.push({
+        ...toPlainObject(teacher),
+        classes: toPlainObject(classes)
+      });
     }
 
-    return toPlainObject(teachers);
+    return result;
   }
 
   async update(id, data) {
