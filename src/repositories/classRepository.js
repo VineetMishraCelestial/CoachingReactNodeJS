@@ -46,18 +46,6 @@ export class ClassRepository {
     return result;
   }
 
-  async findTrash(instituteId) {
-    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
-    const classes = await Class.find({ instituteId: instituteObjId, isActive: false })
-      .populate('teacher')
-      .sort({ updatedAt: -1 })
-      .lean();
-    return toPlainObject(classes);
-  }
-
-    return result;
-  }
-
   async update(id, data) {
     const classData = await Class.findByIdAndUpdate(id, data, { new: true }).lean();
     return toPlainObject(classData);
@@ -69,7 +57,8 @@ export class ClassRepository {
   }
 
   async findTrash(instituteId) {
-    const classes = await Class.find({ instituteId, isActive: false })
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
+    const classes = await Class.find({ instituteId: instituteObjId, isActive: false })
       .populate('teacher')
       .sort({ updatedAt: -1 })
       .lean();
@@ -84,10 +73,11 @@ export class ClassRepository {
   }
 
   async getStats(instituteId) {
+    const instituteObjId = new mongoose.Types.ObjectId(instituteId);
     const [classes, teachers, students] = await Promise.all([
-      Class.countDocuments({ instituteId, isActive: true }),
-      Teacher.countDocuments({ instituteId, isActive: true }),
-      Student.countDocuments({ instituteId, isActive: true })
+      Class.countDocuments({ instituteId: instituteObjId, isActive: true }),
+      Teacher.countDocuments({ instituteId: instituteObjId, isActive: true }),
+      Student.countDocuments({ instituteId: instituteObjId, isActive: true })
     ]);
     return { classes, teachers, students };
   }
