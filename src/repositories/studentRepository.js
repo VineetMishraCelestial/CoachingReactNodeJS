@@ -4,13 +4,20 @@ import Fee from '../models/Fee.js';
 import Attendance from '../models/Attendance.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class StudentRepository {
   async create(data) {
     if (data.instituteId) data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
     if (data.classId) data.classId = new mongoose.Types.ObjectId(data.classId);
     const s = new Student(data);
     const saved = await s.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findById(id) {
@@ -32,7 +39,7 @@ export class StudentRepository {
     for (const s of students) {
       const fee = await Fee.findOne({ studentId: s._id }).sort({ createdAt: -1 }).lean();
       const attCount = await Attendance.countDocuments({ studentId: s._id });
-      result.push({ ...s, fees: fee ? [fee] : [], _count: { attendances: attCount }, id: s._id.toString() });
+      result.push({ ...addId(s), fees: fee ? [addId(fee)] : [], _count: { attendances: attCount } });
     }
     return { students: result, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
@@ -53,7 +60,7 @@ export class StudentRepository {
       Student.find({ instituteId: objId, isActive: false }).populate('class').sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
       Student.countDocuments({ instituteId: objId, isActive: false })
     ]);
-    return { students, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { students: addId(students), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async permanentDelete(id) {

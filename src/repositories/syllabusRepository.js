@@ -3,12 +3,19 @@ import Syllabus from '../models/Syllabus.js';
 import Subject from '../models/Subject.js';
 import Topic from '../models/Topic.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class SyllabusRepository {
   async create(data) {
     if (data.classId) data.classId = new mongoose.Types.ObjectId(data.classId);
     const s = new Syllabus(data);
     const saved = await s.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findById(id) {
@@ -44,7 +51,7 @@ export class SyllabusRepository {
   async createSubject(syllabusId, data) {
     const s = new Subject({ ...data, syllabusId });
     const saved = await s.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async getSubjectById(subjectId) {
@@ -63,7 +70,7 @@ export class SyllabusRepository {
   async createTopic(subjectId, data) {
     const t = new Topic({ ...data, subjectId });
     const saved = await t.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async updateTopic(topicId, data) {

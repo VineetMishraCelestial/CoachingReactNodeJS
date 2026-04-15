@@ -2,12 +2,19 @@ import mongoose from 'mongoose';
 import Homework from '../models/Homework.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class HomeworkRepository {
   async create(data) {
     if (data.classId) data.classId = new mongoose.Types.ObjectId(data.classId);
     const h = new Homework(data);
     const saved = await h.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findById(id) {
@@ -19,7 +26,7 @@ export class HomeworkRepository {
     const result = [];
     for (const h of homeworks) {
       const count = await HomeworkSubmission.countDocuments({ homeworkId: h._id });
-      result.push({ ...h, submissions: h.submissions, _count: { submissions: count } });
+      result.push({ ...addId(h), submissions: addId(h.submissions), _count: { submissions: count } });
     }
     return result;
   }
@@ -40,7 +47,7 @@ export class HomeworkRepository {
     }
     const s = new HomeworkSubmission({ homeworkId, studentId, status: 'submitted', submittedAt: new Date() });
     const saved = await s.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 }
 

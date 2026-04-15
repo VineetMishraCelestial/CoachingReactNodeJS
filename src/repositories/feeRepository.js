@@ -2,12 +2,19 @@ import mongoose from 'mongoose';
 import Fee from '../models/Fee.js';
 import Student from '../models/Student.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class FeeRepository {
   async create(data) {
     if (data.studentId) data.studentId = new mongoose.Types.ObjectId(data.studentId);
     const f = new Fee(data);
     const saved = await f.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findById(id) {
@@ -60,7 +67,7 @@ export class FeeRepository {
     }
     const f = new Fee({ studentId: sId, month, year, ...data });
     const saved = await f.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 }
 

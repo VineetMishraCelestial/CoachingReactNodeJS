@@ -1,6 +1,13 @@
 import mongoose from 'mongoose';
 import Attendance from '../models/Attendance.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class AttendanceRepository {
   async findByClassAndDate(classId, date) {
     let localDate;
@@ -12,7 +19,11 @@ export class AttendanceRepository {
     }
     const start = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     const end = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 23, 59, 59, 999));
-    return Attendance.find({ classId, date: { $gte: start, $lte: end } }).populate('student').lean();
+    const result = await Attendance.find({ classId, date: { $gte: start, $lte: end } }).populate('student').lean();
+    return result.map(a => ({
+      ...addId(a),
+      student: a.student ? addId(a.student) : null
+    }));
   }
 
   async upsert(studentId, classId, date, status) {
@@ -32,7 +43,7 @@ export class AttendanceRepository {
     }
     const a = new Attendance({ studentId: sId, classId: cId, date: localDate, status });
     const saved = await a.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 }
 

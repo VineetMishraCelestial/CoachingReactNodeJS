@@ -2,6 +2,13 @@ import mongoose from 'mongoose';
 import Teacher from '../models/Teacher.js';
 import Class from '../models/Class.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class TeacherRepository {
   async create(data) {
     if (data.instituteId) {
@@ -9,7 +16,7 @@ export class TeacherRepository {
     }
     const teacher = new Teacher(data);
     const saved = await teacher.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findById(id) {
@@ -28,7 +35,7 @@ export class TeacherRepository {
     const result = [];
     for (const t of teachers) {
       const classes = await Class.find({ teacherId: t._id, isActive: true }).select('_id name subject').lean();
-      result.push({ ...t, classes, id: t._id.toString() });
+      result.push({ ...addId(t), classes: addId(classes) });
     }
     return result;
   }

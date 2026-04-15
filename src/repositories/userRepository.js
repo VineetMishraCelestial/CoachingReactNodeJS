@@ -1,10 +1,17 @@
 import User from '../models/User.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class UserRepository {
   async create(data) {
     const user = new User(data);
     const saved = await user.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findByMobile(mobile) {
@@ -28,7 +35,7 @@ export class UserRepository {
       User.countDocuments(filters)
     ]);
 
-    return { users, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { users: addId(users), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findAllInstitutes() {

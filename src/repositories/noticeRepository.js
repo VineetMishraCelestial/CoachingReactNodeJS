@@ -1,12 +1,19 @@
 import mongoose from 'mongoose';
 import Notice from '../models/Notice.js';
 
+const addId = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(d => addId(d));
+  const { _id, ...rest } = doc;
+  return { id: _id?.toString(), ...rest };
+};
+
 export class NoticeRepository {
   async create(data) {
     if (data.instituteId) data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
     const n = new Notice(data);
     const saved = await n.save();
-    return saved.toObject();
+    return addId(saved.toObject());
   }
 
   async findById(id) {
