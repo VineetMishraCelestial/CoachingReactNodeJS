@@ -7,23 +7,28 @@ import Student from '../models/Student.js';
 export class ClassRepository {
   async create(data) {
     const classData = new Class(data);
-    return classData.save();
+    const saved = await classData.save();
+    return saved.toObject();
   }
 
   async findById(id) {
-    return Class.findById(id).populate('teacher', '_id name subject mobile email').populate('students', '_id name parentMobile joiningDate');
+    return Class.findById(id)
+      .populate('teacher', '_id name subject mobile email')
+      .populate('students', '_id name parentMobile joiningDate')
+      .lean();
   }
 
   async findByInstitute(instituteId, filters = {}) {
     const classes = await Class.find({ instituteId, isActive: true, ...filters })
       .populate('teacher', '_id name subject')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const result = [];
     for (const cls of classes) {
       const studentCount = await Student.countDocuments({ classId: cls._id, isActive: true });
       result.push({
-        ...cls.toObject(),
+        ...cls,
         _count: { students: studentCount }
       });
     }
@@ -32,23 +37,24 @@ export class ClassRepository {
   }
 
   async update(id, data) {
-    return Class.findByIdAndUpdate(id, data, { new: true });
+    return Class.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async delete(id) {
-    return Class.findByIdAndDelete(id);
+    return Class.findByIdAndDelete(id).lean();
   }
 
   async findTrash(instituteId) {
     return Class.find({ instituteId, isActive: false })
       .populate('teacher')
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 })
+      .lean();
   }
 
   async permanentDelete(id) {
     await Homework.deleteMany({ classId: id });
     await Syllabus.deleteMany({ classId: id });
-    return Class.findByIdAndDelete(id);
+    return Class.findByIdAndDelete(id).lean();
   }
 
   async getStats(instituteId) {

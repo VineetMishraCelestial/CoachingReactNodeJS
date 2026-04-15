@@ -1,5 +1,4 @@
 import Attendance from '../models/Attendance.js';
-import Student from '../models/Student.js';
 
 export class AttendanceRepository {
   async findByClassAndDate(classId, date) {
@@ -20,7 +19,7 @@ export class AttendanceRepository {
         $gte: startOfDay,
         $lte: endOfDay
       }
-    }).populate('student');
+    }).populate('student').lean();
   }
 
   async upsert(studentId, classId, date, status) {
@@ -33,11 +32,10 @@ export class AttendanceRepository {
       localDate = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     }
 
-    const existing = await Attendance.findOne({ studentId, classId, date: localDate });
+    const existing = await Attendance.findOne({ studentId, classId, date: localDate }).lean();
 
     if (existing) {
-      existing.status = status;
-      return existing.save();
+      return Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
     } else {
       const attendance = new Attendance({
         studentId,
@@ -45,7 +43,8 @@ export class AttendanceRepository {
         date: localDate,
         status
       });
-      return attendance.save();
+      const saved = await attendance.save();
+      return saved.toObject();
     }
   }
 }

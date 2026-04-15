@@ -4,33 +4,31 @@ import HomeworkSubmission from '../models/HomeworkSubmission.js';
 export class HomeworkRepository {
   async create(data) {
     const homework = new Homework(data);
-    return homework.save();
+    const saved = await homework.save();
+    return saved.toObject();
   }
 
   async findById(id) {
-    const homework = await Homework.findById(id)
+    return Homework.findById(id)
       .populate('class')
       .populate({
         path: 'submissions',
-        populate: {
-          path: 'student'
-        }
-      });
-    return homework;
+        populate: { path: 'student' }
+      })
+      .lean();
   }
 
   async findByClass(classId, filters = {}) {
     const homeworks = await Homework.find({ classId, ...filters })
-      .populate({
-        path: 'submissions'
-      })
-      .sort({ createdAt: -1 });
+      .populate({ path: 'submissions' })
+      .sort({ createdAt: -1 })
+      .lean();
 
     const result = [];
     for (const hw of homeworks) {
       const submissionCount = await HomeworkSubmission.countDocuments({ homeworkId: hw._id });
       result.push({
-        ...hw.toObject(),
+        ...hw,
         submissions: hw.submissions,
         _count: { submissions: submissionCount }
       });
@@ -40,21 +38,22 @@ export class HomeworkRepository {
   }
 
   async update(id, data) {
-    return Homework.findByIdAndUpdate(id, data, { new: true });
+    return Homework.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async delete(id) {
     await HomeworkSubmission.deleteMany({ homeworkId: id });
-    return Homework.findByIdAndDelete(id);
+    return Homework.findByIdAndDelete(id).lean();
   }
 
   async addSubmission(homeworkId, studentId) {
-    const existing = await HomeworkSubmission.findOne({ homeworkId, studentId });
+    const existing = await HomeworkSubmission.findOne({ homeworkId, studentId }).lean();
 
     if (existing) {
-      existing.status = 'submitted';
-      existing.submittedAt = new Date();
-      return existing.save();
+      return HomeworkSubmission.findByIdAndUpdate(existing._id, {
+        status: 'submitted',
+        submittedAt: new Date()
+      }, { new: true }).lean();
     } else {
       const submission = new HomeworkSubmission({
         homeworkId,
@@ -62,7 +61,8 @@ export class HomeworkRepository {
         status: 'submitted',
         submittedAt: new Date()
       });
-      return submission.save();
+      const saved = await submission.save();
+      return saved.toObject();
     }
   }
 }

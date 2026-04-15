@@ -3,19 +3,20 @@ import User from '../models/User.js';
 export class UserRepository {
   async create(data) {
     const user = new User(data);
-    return user.save();
+    const saved = await user.save();
+    return saved.toObject();
   }
 
   async findByMobile(mobile) {
-    return User.findOne({ mobile });
+    return User.findOne({ mobile }).lean();
   }
 
   async findById(id) {
-    return User.findById(id);
+    return User.findById(id).lean();
   }
 
   async update(id, data) {
-    return User.findByIdAndUpdate(id, data, { new: true });
+    return User.findByIdAndUpdate(id, data, { new: true }).lean();
   }
 
   async findAll(filters = {}, pagination = {}) {
@@ -26,7 +27,8 @@ export class UserRepository {
       User.find(filters)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       User.countDocuments(filters)
     ]);
 
@@ -34,7 +36,7 @@ export class UserRepository {
   }
 
   async findAllInstitutes() {
-    return User.find({ role: 'institute', isActive: true }).select('_id');
+    return User.find({ role: 'institute', isActive: true }).select('_id').lean();
   }
 }
 
