@@ -19,13 +19,24 @@ export class SyllabusRepository {
   }
 
   async findById(id) {
-    const s = await Syllabus.findById(id).populate({ path: 'subjects', populate: { path: 'topics' } }).lean();
-    return s ? addId(s) : null;
+    const s = await Syllabus.findById(id).lean();
+    if (!s) return null;
+    const result = addId(s);
+    const subjects = await Subject.find({ syllabusId: s._id }).populate('topics').lean();
+    result.subjects = addId(subjects);
+    return result;
   }
 
   async findByClass(classId) {
-    const syllabi = await Syllabus.find({ classId }).populate({ path: 'subjects', populate: { path: 'topics' } }).sort({ createdAt: 1 }).lean();
-    return addId(syllabi);
+    const syllabi = await Syllabus.find({ classId }).sort({ createdAt: 1 }).lean();
+    const result = [];
+    for (const syllabus of syllabi) {
+      const syllabusWithId = addId(syllabus);
+      const subjects = await Subject.find({ syllabusId: syllabus._id }).populate('topics').lean();
+      syllabusWithId.subjects = addId(subjects);
+      result.push(syllabusWithId);
+    }
+    return result;
   }
 
   async update(id, data) {
