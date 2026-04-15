@@ -2,7 +2,7 @@ import { body } from 'express-validator';
 
 export const createFeeValidation = [
   body('studentId')
-    .isUUID().withMessage('Invalid student ID'),
+    .notEmpty().withMessage('Student ID is required'),
   body('month')
     .trim()
     .notEmpty().withMessage('Month is required'),

@@ -2,7 +2,7 @@ import { body } from 'express-validator';
 
 export const createHomeworkValidation = [
   body('classId')
-    .isUUID().withMessage('Invalid class ID'),
+    .notEmpty().withMessage('Class ID is required'),
   body('title')
     .trim()
     .notEmpty().withMessage('Title is required'),
@@ -32,7 +32,7 @@ export const updateHomeworkValidation = [
 
 export const submitHomeworkValidation = [
   body('homeworkId')
-    .isUUID().withMessage('Invalid homework ID'),
+    .notEmpty().withMessage('Homework ID is required'),
   body('studentId')
-    .isUUID().withMessage('Invalid student ID')
+    .notEmpty().withMessage('Student ID is required')
 ];

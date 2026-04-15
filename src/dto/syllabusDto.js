@@ -2,7 +2,7 @@ import { body, param } from 'express-validator';
 
 export const createSyllabusValidation = [
   body('classId')
-    .isUUID().withMessage('Invalid class ID'),
+    .notEmpty().withMessage('Class ID is required'),
   body('name')
     .trim()
     .notEmpty().withMessage('Syllabus name is required'),
@@ -23,7 +23,7 @@ export const updateSyllabusValidation = [
 
 export const createSubjectValidation = [
   param('syllabusId')
-    .isUUID().withMessage('Invalid syllabus ID'),
+    .notEmpty().withMessage('Syllabus ID is required'),
   body('name')
     .trim()
     .notEmpty().withMessage('Subject name is required')
@@ -31,7 +31,7 @@ export const createSubjectValidation = [
 
 export const createTopicValidation = [
   param('subjectId')
-    .isUUID().withMessage('Invalid subject ID'),
+    .notEmpty().withMessage('Subject ID is required'),
   body('name')
     .trim()
     .notEmpty().withMessage('Topic name is required')

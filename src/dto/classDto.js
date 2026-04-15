@@ -10,9 +10,6 @@ export const createClassValidation = [
   body('monthlyFee')
     .optional()
     .isInt({ min: 0 }).withMessage('Monthly fee must be a positive number'),
-  body('teacherId')
-    .optional()
-    .isUUID().withMessage('Invalid teacher ID'),
   body('startTime')
     .optional()
     .trim(),
@@ -35,8 +32,5 @@ export const updateClassValidation = [
     .notEmpty().withMessage('Subject cannot be empty'),
   body('monthlyFee')
     .optional()
-    .isInt({ min: 0 }).withMessage('Monthly fee must be a positive number'),
-  body('teacherId')
-    .optional()
-    .isUUID().withMessage('Invalid teacher ID')
+    .isInt({ min: 0 }).withMessage('Monthly fee must be a positive number')
 ];

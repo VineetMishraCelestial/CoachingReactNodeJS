@@ -12,10 +12,7 @@ export const createNoticeValidation = [
     .isIn(['general', 'urgent', 'fee', 'holiday']).withMessage('Invalid type'),
   body('priority')
     .optional()
-    .isIn(['normal', 'high', 'low']).withMessage('Invalid priority'),
-  body('classId')
-    .optional()
-    .isUUID().withMessage('Invalid class ID')
+    .isIn(['normal', 'high', 'low']).withMessage('Invalid priority')
 ];
 
 export const updateNoticeValidation = [
@@ -32,8 +29,5 @@ export const updateNoticeValidation = [
     .isIn(['general', 'urgent', 'fee', 'holiday']).withMessage('Invalid type'),
   body('priority')
     .optional()
-    .isIn(['normal', 'high', 'low']).withMessage('Invalid priority'),
-  body('classId')
-    .optional()
-    .isUUID().withMessage('Invalid class ID')
+    .isIn(['normal', 'high', 'low']).withMessage('Invalid priority')
 ];

@@ -9,7 +9,7 @@ export const createStudentValidation = [
     .notEmpty().withMessage('Parent mobile is required')
     .matches(/^[0-9]{10}$/).withMessage('Mobile must be 10 digits'),
   body('classId')
-    .isUUID().withMessage('Invalid class ID'),
+    .notEmpty().withMessage('Class ID is required'),
   body('address')
     .optional()
     .trim(),
@@ -42,9 +42,6 @@ export const updateStudentValidation = [
     .optional()
     .trim()
     .matches(/^[0-9]{10}$/).withMessage('Mobile must be 10 digits'),
-  body('classId')
-    .optional()
-    .isUUID().withMessage('Invalid class ID'),
   body('address')
     .optional()
     .trim()
