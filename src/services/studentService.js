@@ -6,7 +6,7 @@ import { NotFoundError, BadRequestError } from '../utils/errors.js';
 export class StudentService {
   async create(instituteId, data) {
     const classData = await classRepository.findById(data.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -80,13 +80,13 @@ export class StudentService {
 
   async update(id, instituteId, data) {
     const student = await studentRepository.findById(id);
-    if (!student || student.instituteId !== instituteId) {
+    if (!student || student.instituteId?.toString() !== instituteId) {
       throw new NotFoundError('Student not found');
     }
 
     if (data.classId) {
       const classData = await classRepository.findById(data.classId);
-      if (!classData || classData.instituteId !== instituteId) {
+      if (!classData || classData.instituteId?.toString() !== instituteId) {
         throw new BadRequestError('Invalid class');
       }
     }
@@ -96,7 +96,7 @@ export class StudentService {
 
   async delete(id, instituteId) {
     const student = await studentRepository.findById(id);
-    if (!student || student.instituteId !== instituteId) {
+    if (!student || student.instituteId?.toString() !== instituteId) {
       throw new NotFoundError('Student not found');
     }
 
@@ -109,7 +109,7 @@ export class StudentService {
 
   async restore(id, instituteId) {
     const student = await studentRepository.findById(id);
-    if (!student || student.instituteId !== instituteId) {
+    if (!student || student.instituteId?.toString() !== instituteId) {
       throw new NotFoundError('Student not found');
     }
 
@@ -118,7 +118,7 @@ export class StudentService {
 
   async permanentDelete(id, instituteId) {
     const student = await studentRepository.findById(id);
-    if (!student || student.instituteId !== instituteId) {
+    if (!student || student.instituteId?.toString() !== instituteId) {
       throw new NotFoundError('Student not found');
     }
 

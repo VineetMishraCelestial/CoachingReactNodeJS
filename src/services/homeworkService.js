@@ -5,7 +5,7 @@ import { NotFoundError, BadRequestError } from '../utils/errors.js';
 export class HomeworkService {
   async create(classId, instituteId, data) {
     const classData = await classRepository.findById(classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -35,7 +35,7 @@ export class HomeworkService {
 
   async getByClass(classId, instituteId, filters = {}) {
     const classData = await classRepository.findById(classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -55,7 +55,7 @@ export class HomeworkService {
     }
 
     const classData = await classRepository.findById(homework.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -73,7 +73,7 @@ export class HomeworkService {
     }
 
     const classData = await classRepository.findById(homework.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 

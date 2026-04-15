@@ -88,7 +88,7 @@ export class TeacherService {
 
   async restore(id, instituteId) {
     const teacher = await teacherRepository.findById(id);
-    if (!teacher || teacher.instituteId !== instituteId) {
+    if (!teacher || teacher.instituteId?.toString() !== instituteId) {
       throw new NotFoundError('Teacher not found');
     }
     return teacherRepository.update(id, { isActive: true });
@@ -96,7 +96,7 @@ export class TeacherService {
 
   async permanentDelete(id, instituteId) {
     const teacher = await teacherRepository.findById(id);
-    if (!teacher || teacher.instituteId !== instituteId) {
+    if (!teacher || teacher.instituteId?.toString() !== instituteId) {
       throw new NotFoundError('Teacher not found');
     }
     return teacherRepository.permanentDelete(id);

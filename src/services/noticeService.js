@@ -6,7 +6,7 @@ export class NoticeService {
   async create(instituteId, data) {
     if (data.classId) {
       const classData = await classRepository.findById(data.classId);
-      if (!classData || classData.instituteId !== instituteId) {
+      if (!classData || classData.instituteId?.toString() !== instituteId) {
         throw new BadRequestError('Invalid class');
       }
     }
@@ -34,13 +34,13 @@ export class NoticeService {
     if (!notice) {
       throw new NotFoundError('Notice not found');
     }
-    if (notice.instituteId !== instituteId) {
+    if (notice.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Not authorized');
     }
 
     if (data.classId) {
       const classData = await classRepository.findById(data.classId);
-      if (!classData || classData.instituteId !== instituteId) {
+      if (!classData || classData.instituteId?.toString() !== instituteId) {
         throw new BadRequestError('Invalid class');
       }
     }
@@ -53,7 +53,7 @@ export class NoticeService {
     if (!notice) {
       throw new NotFoundError('Notice not found');
     }
-    if (notice.instituteId !== instituteId) {
+    if (notice.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Not authorized');
     }
 
