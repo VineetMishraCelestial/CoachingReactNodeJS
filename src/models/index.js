@@ -1,0 +1,12 @@
+export { default as User } from './User.js';
+export { default as Teacher } from './Teacher.js';
+export { default as Class } from './Class.js';
+export { default as Student } from './Student.js';
+export { default as Attendance } from './Attendance.js';
+export { default as Fee } from './Fee.js';
+export { default as Syllabus } from './Syllabus.js';
+export { default as Subject } from './Subject.js';
+export { default as Topic } from './Topic.js';
+export { default as Homework } from './Homework.js';
+export { default as HomeworkSubmission } from './HomeworkSubmission.js';
+export { default as Notice } from './Notice.js';

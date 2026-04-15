@@ -1,4 +1,5 @@
-import prisma from '../config/database.js';
+import Attendance from '../models/Attendance.js';
+import Student from '../models/Student.js';
 
 export class AttendanceRepository {
   async findByClassAndDate(classId, date) {
@@ -13,16 +14,13 @@ export class AttendanceRepository {
     const startOfDay = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     const endOfDay = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 23, 59, 59, 999));
 
-    return prisma.attendance.findMany({
-      where: {
-        classId,
-        date: {
-          gte: startOfDay,
-          lte: endOfDay
-        }
-      },
-      include: { student: true }
-    });
+    return Attendance.find({
+      classId,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    }).populate('student');
   }
 
   async upsert(studentId, classId, date, status) {
@@ -35,17 +33,20 @@ export class AttendanceRepository {
       localDate = new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 0, 0, 0, 0));
     }
 
-    return prisma.attendance.upsert({
-      where: {
-        studentId_classId_date: {
-          studentId,
-          classId,
-          date: localDate
-        }
-      },
-      create: { studentId, classId, date: localDate, status },
-      update: { status }
-    });
+    const existing = await Attendance.findOne({ studentId, classId, date: localDate });
+
+    if (existing) {
+      existing.status = status;
+      return existing.save();
+    } else {
+      const attendance = new Attendance({
+        studentId,
+        classId,
+        date: localDate,
+        status
+      });
+      return attendance.save();
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
 import { UnauthorizedError } from '../utils/errors.js';
-import prisma from '../config/database.js';
+import User from '../models/User.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -14,17 +14,9 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, config.jwtSecret);
     
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        mobile: true,
-        role: true,
-        name: true,
-        instituteName: true,
-        isActive: true
-      }
-    });
+    const user = await User.findById(decoded.userId).select(
+      '_id mobile role name instituteName isActive'
+    );
 
     if (!user || !user.isActive) {
       throw new UnauthorizedError('User not found or inactive');

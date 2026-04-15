@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cron from 'node-cron';
 import { config } from './config/index.js';
+import { connectDB, disconnectDB } from './config/database.js';
 import routes from './routes/index.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 import feeService from './services/feeService.js';
@@ -40,7 +41,7 @@ cron.schedule('0 0 1 * *', async () => {
   try {
     const institutes = await userRepository.findAllInstitutes();
     for (const institute of institutes) {
-      await feeService.generateMonthlyFees(institute.id);
+      await feeService.generateMonthlyFees(institute._id);
     }
     console.log('Monthly fees generated successfully');
   } catch (error) {
@@ -48,10 +49,29 @@ cron.schedule('0 0 1 * *', async () => {
   }
 });
 
-const PORT = config.port;
+const gracefulShutdown = async () => {
+  console.log('Received shutdown signal. Closing server gracefully...');
+  await disconnectDB();
+  process.exit(0);
+};
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
-});
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    
+    const PORT = config.port;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;

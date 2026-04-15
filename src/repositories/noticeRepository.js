@@ -1,31 +1,30 @@
-import prisma from '../config/database.js';
+import Notice from '../models/Notice.js';
 
 export class NoticeRepository {
   async create(data) {
-    return prisma.notice.create({ data });
+    const notice = new Notice(data);
+    return notice.save();
   }
 
   async findById(id) {
-    return prisma.notice.findUnique({ where: { id } });
+    return Notice.findById(id);
   }
 
   async findByInstitute(instituteId, filters = {}) {
     const { classId } = filters;
-    const where = { instituteId };
-    if (classId) where.classId = classId;
+    const query = { instituteId };
+    if (classId) query.classId = classId;
 
-    return prisma.notice.findMany({
-      where,
-      orderBy: { createdAt: 'desc' }
-    });
+    return Notice.find(query)
+      .sort({ createdAt: -1 });
   }
 
   async update(id, data) {
-    return prisma.notice.update({ where: { id }, data });
+    return Notice.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id) {
-    return prisma.notice.delete({ where: { id } });
+    return Notice.findByIdAndDelete(id);
   }
 }
 

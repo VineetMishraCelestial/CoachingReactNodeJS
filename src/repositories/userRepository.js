@@ -1,20 +1,21 @@
-import prisma from '../config/database.js';
+import User from '../models/User.js';
 
 export class UserRepository {
   async create(data) {
-    return prisma.user.create({ data });
+    const user = new User(data);
+    return user.save();
   }
 
   async findByMobile(mobile) {
-    return prisma.user.findUnique({ where: { mobile } });
+    return User.findOne({ mobile });
   }
 
   async findById(id) {
-    return prisma.user.findUnique({ where: { id } });
+    return User.findById(id);
   }
 
   async update(id, data) {
-    return prisma.user.update({ where: { id }, data });
+    return User.findByIdAndUpdate(id, data, { new: true });
   }
 
   async findAll(filters = {}, pagination = {}) {
@@ -22,23 +23,18 @@ export class UserRepository {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where: filters,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.user.count({ where: filters })
+      User.find(filters)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filters)
     ]);
 
     return { users, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findAllInstitutes() {
-    return prisma.user.findMany({
-      where: { role: 'institute', isActive: true },
-      select: { id: true }
-    });
+    return User.find({ role: 'institute', isActive: true }).select('_id');
   }
 }
 

@@ -1,61 +1,79 @@
-import prisma from '../config/database.js';
+import Fee from '../models/Fee.js';
+import Student from '../models/Student.js';
 
 export class FeeRepository {
   async create(data) {
-    return prisma.fee.create({ data });
+    const fee = new Fee(data);
+    return fee.save();
   }
 
   async findById(id) {
-    return prisma.fee.findUnique({
-      where: { id },
-      include: { student: true }
-    });
+    return Fee.findById(id).populate('student');
   }
 
   async findByStudent(studentId) {
-    return prisma.fee.findMany({
-      where: { studentId },
-      orderBy: [{ year: 'desc' }, { month: 'desc' }]
-    });
+    return Fee.find({ studentId })
+      .sort({ year: -1, month: -1 });
   }
 
   async findByClass(classId) {
-    return prisma.fee.findMany({
-      where: { student: { classId } },
-      include: { student: { select: { id: true, name: true } } },
-      orderBy: [{ year: 'desc' }, { month: 'desc' }]
-    });
+    const students = await Student.find({ classId });
+    const studentIds = students.map(s => s._id);
+    
+    return Fee.find({ studentId: { $in: studentIds } })
+      .populate('student', '_id name')
+      .sort({ year: -1, month: -1 });
   }
 
   async findByInstitute(instituteId, filters = {}) {
     const { classId, status, month, year } = filters;
-    const where = { student: { instituteId } };
-    if (classId) where.student = { ...where.student, classId };
-    if (status) where.status = status;
-    if (month) where.month = month;
-    if (year) where.year = parseInt(year);
+    const students = await Student.find({ instituteId });
+    const studentIds = students.map(s => s._id);
+    
+    const studentMap = {};
+    for (const student of students) {
+      studentMap[student._id.toString()] = student;
+    }
 
-    return prisma.fee.findMany({
-      where,
-      include: { student: { include: { class: true } } },
-      orderBy: { createdAt: 'desc' }
-    });
+    const query = { studentId: { $in: studentIds } };
+    if (classId) {
+      const classStudents = await Student.find({ classId });
+      query.studentId = { $in: classStudents.map(s => s._id) };
+    }
+    if (status) query.status = status;
+    if (month) query.month = month;
+    if (year) query.year = parseInt(year);
+
+    const fees = await Fee.find(query)
+      .sort({ createdAt: -1 });
+
+    const enrichedFees = fees.map(fee => ({
+      ...fee.toObject(),
+      student: {
+        ...fee.student,
+        class: studentMap[fee.studentId.toString()]?.classId
+      }
+    }));
+
+    return enrichedFees;
   }
 
   async getPendingCount(instituteId) {
-    return prisma.fee.count({
-      where: {
-        status: 'pending',
-        student: { instituteId }
-      }
+    const students = await Student.find({ instituteId });
+    const studentIds = students.map(s => s._id);
+    
+    return Fee.countDocuments({
+      status: 'pending',
+      studentId: { $in: studentIds }
     });
   }
 
   async getCollectionStats(instituteId) {
-    const fees = await prisma.fee.findMany({
-      where: { student: { instituteId } },
-      select: { amount: true, status: true }
-    });
+    const students = await Student.find({ instituteId });
+    const studentIds = students.map(s => s._id);
+    
+    const fees = await Fee.find({ studentId: { $in: studentIds } })
+      .select('_id amount status');
 
     const collected = fees
       .filter(f => f.status === 'paid')
@@ -68,13 +86,20 @@ export class FeeRepository {
   }
 
   async upsert(studentId, month, year, data) {
-    return prisma.fee.upsert({
-      where: {
-        studentId_month_year: { studentId, month, year }
-      },
-      create: { studentId, month, year, ...data },
-      update: data
-    });
+    const existing = await Fee.findOne({ studentId, month, year });
+
+    if (existing) {
+      Object.assign(existing, data);
+      return existing.save();
+    } else {
+      const fee = new Fee({
+        studentId,
+        month,
+        year,
+        ...data
+      });
+      return fee.save();
+    }
   }
 }
 

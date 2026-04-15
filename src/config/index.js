@@ -8,5 +8,5 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
-  dbUrl: process.env.DATABASE_URL || 'file:./dev.db'
+  mongoUri: process.env.MONGODB_URI
 };

@@ -1,22 +1,16 @@
-import prisma from '../config/database.js';
+import Student from '../models/Student.js';
+import Fee from '../models/Fee.js';
+import Attendance from '../models/Attendance.js';
+import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
 export class StudentRepository {
   async create(data) {
-    return prisma.student.create({
-      data,
-      include: { class: true }
-    });
+    const student = new Student(data);
+    return student.save();
   }
 
   async findById(id) {
-    return prisma.student.findUnique({
-      where: { id },
-      include: {
-        class: true,
-        fees: { orderBy: { createdAt: 'desc' } },
-        _count: { select: { attendances: true } }
-      }
-    });
+    return Student.findById(id).populate('class');
   }
 
   async findByInstitute(instituteId, filters = {}, pagination = {}) {
@@ -24,31 +18,36 @@ export class StudentRepository {
     const skip = (page - 1) * limit;
 
     const [students, total] = await Promise.all([
-      prisma.student.findMany({
-        where: { instituteId, isActive: true, ...filters },
-        include: {
-          class: true,
-          fees: {
-            take: 1,
-            orderBy: { createdAt: 'desc' }
-          }
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.student.count({ where: { instituteId, isActive: true, ...filters } })
+      Student.find({ instituteId, isActive: true, ...filters })
+        .populate('class')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Student.countDocuments({ instituteId, isActive: true, ...filters })
     ]);
 
-    return { students, total, page, limit, totalPages: Math.ceil(total / limit) };
+    const enrichedStudents = [];
+    for (const student of students) {
+      const latestFee = await Fee.findOne({ studentId: student._id })
+        .sort({ createdAt: -1 });
+      const attendanceCount = await Attendance.countDocuments({ studentId: student._id });
+      
+      enrichedStudents.push({
+        ...student.toObject(),
+        fees: latestFee ? [latestFee] : [],
+        _count: { attendances: attendanceCount }
+      });
+    }
+
+    return { students: enrichedStudents, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async update(id, data) {
-    return prisma.student.update({ where: { id }, data });
+    return Student.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id) {
-    return prisma.student.delete({ where: { id } });
+    return Student.findByIdAndDelete(id);
   }
 
   async findTrash(instituteId, pagination = {}) {
@@ -56,36 +55,32 @@ export class StudentRepository {
     const skip = (page - 1) * limit;
 
     const [students, total] = await Promise.all([
-      prisma.student.findMany({
-        where: { instituteId, isActive: false },
-        include: { class: true },
-        skip,
-        take: limit,
-        orderBy: { updatedAt: 'desc' }
-      }),
-      prisma.student.count({ where: { instituteId, isActive: false } })
+      Student.find({ instituteId, isActive: false })
+        .populate('class')
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Student.countDocuments({ instituteId, isActive: false })
     ]);
 
     return { students, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async permanentDelete(id) {
-    await prisma.fee.deleteMany({ where: { studentId: id } });
-    await prisma.homeworkSubmission.deleteMany({ where: { studentId: id } });
-    return prisma.student.delete({ where: { id } });
+    await Fee.deleteMany({ studentId: id });
+    await HomeworkSubmission.deleteMany({ studentId: id });
+    return Student.findByIdAndDelete(id);
   }
 
   async getAttendanceStats(studentId, month, year) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    const attendances = await prisma.attendance.count({
-      where: {
-        studentId,
-        date: {
-          gte: startDate,
-          lte: endDate
-        }
+    const attendances = await Attendance.countDocuments({
+      studentId,
+      date: {
+        $gte: startDate,
+        $lte: endDate
       }
     });
 

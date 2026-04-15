@@ -1,54 +1,48 @@
-import prisma from '../config/database.js';
+import Teacher from '../models/Teacher.js';
+import Class from '../models/Class.js';
 
 export class TeacherRepository {
   async create(data) {
-    return prisma.teacher.create({ data });
+    const teacher = new Teacher(data);
+    return teacher.save();
   }
 
   async findById(id) {
-    return prisma.teacher.findUnique({
-      where: { id }
-    });
+    return Teacher.findById(id);
   }
 
   async findByMobile(mobile) {
-    return prisma.teacher.findUnique({ where: { mobile } });
+    return Teacher.findOne({ mobile });
   }
 
   async findByInstitute(instituteId, filters = {}) {
-    const teachers = await prisma.teacher.findMany({
-      where: { instituteId, isActive: true, ...filters },
-      orderBy: { createdAt: 'desc' }
-    });
+    const teachers = await Teacher.find({ instituteId, isActive: true, ...filters })
+      .sort({ createdAt: -1 });
 
     for (const teacher of teachers) {
-      const classes = await prisma.class.findMany({
-        where: { teacherId: teacher.id, isActive: true },
-        select: { id: true, name: true, subject: true }
-      });
-      teacher.classes = classes;
+      const classes = await Class.find({ teacherId: teacher._id, isActive: true })
+        .select('_id name subject');
+      teacher._doc.classes = classes;
     }
 
     return teachers;
   }
 
   async update(id, data) {
-    return prisma.teacher.update({ where: { id }, data });
+    return Teacher.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id) {
-    return prisma.teacher.delete({ where: { id } });
+    return Teacher.findByIdAndDelete(id);
   }
 
   async findTrash(instituteId) {
-    return prisma.teacher.findMany({
-      where: { instituteId, isActive: false },
-      orderBy: { updatedAt: 'desc' }
-    });
+    return Teacher.find({ instituteId, isActive: false })
+      .sort({ updatedAt: -1 });
   }
 
   async permanentDelete(id) {
-    return prisma.teacher.delete({ where: { id } });
+    return Teacher.findByIdAndDelete(id);
   }
 }
 

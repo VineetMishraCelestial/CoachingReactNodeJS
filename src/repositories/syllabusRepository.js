@@ -1,95 +1,89 @@
-import prisma from '../config/database.js';
+import Syllabus from '../models/Syllabus.js';
+import Subject from '../models/Subject.js';
+import Topic from '../models/Topic.js';
 
 export class SyllabusRepository {
   async create(data) {
-    return prisma.syllabus.create({ data });
+    const syllabus = new Syllabus(data);
+    return syllabus.save();
   }
 
   async findById(id) {
-    return prisma.syllabus.findUnique({ 
-      where: { id },
-      include: {
-        subjects: {
-          include: {
-            topics: true
-          }
-        }
+    const syllabus = await Syllabus.findById(id).populate({
+      path: 'subjects',
+      populate: {
+        path: 'topics'
       }
     });
+    return syllabus;
   }
 
   async findByClass(classId) {
-    return prisma.syllabus.findMany({
-      where: { classId },
-      include: {
-        subjects: {
-          include: {
-            topics: true
-          }
+    return Syllabus.find({ classId })
+      .populate({
+        path: 'subjects',
+        populate: {
+          path: 'topics'
         }
-      },
-      orderBy: { createdAt: 'asc' }
-    });
+      })
+      .sort({ createdAt: 1 });
   }
 
   async update(id, data) {
-    return prisma.syllabus.update({ where: { id }, data });
+    return Syllabus.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id) {
-    return prisma.syllabus.delete({ where: { id } });
+    const subjects = await Subject.find({ syllabusId: id });
+    for (const subject of subjects) {
+      await Topic.deleteMany({ subjectId: subject._id });
+    }
+    await Subject.deleteMany({ syllabusId: id });
+    return Syllabus.findByIdAndDelete(id);
   }
 
   async getProgressStats(classId) {
-    const syllabi = await prisma.syllabus.findMany({
-      where: { classId },
-      select: { status: true }
-    });
+    const syllabi = await Syllabus.find({ classId }).select('status');
+    const subjects = await Subject.find({ syllabusId: { $in: syllabi.map(s => s._id) } });
 
-    const done = syllabi.filter(s => s.status === 'done').length;
-    const ongoing = syllabi.filter(s => s.status === 'ongoing').length;
-    const pending = syllabi.filter(s => s.status === 'pending').length;
+    const done = subjects.filter(s => s.status === 'done').length;
+    const ongoing = subjects.filter(s => s.status === 'ongoing').length;
+    const pending = subjects.filter(s => s.status === 'pending').length;
 
     return {
-      total: syllabi.length,
+      total: subjects.length,
       done,
       ongoing,
       pending,
-      percentage: syllabi.length ? Math.round((done / syllabi.length) * 100) : 0
+      percentage: subjects.length ? Math.round((done / subjects.length) * 100) : 0
     };
   }
 
   async createSubject(syllabusId, data) {
-    return prisma.subject.create({
-      data: { ...data, syllabusId }
-    });
+    const subject = new Subject({ ...data, syllabusId });
+    return subject.save();
   }
 
   async getSubjectById(subjectId) {
-    return prisma.subject.findUnique({
-      where: { id: subjectId },
-      include: {
-        topics: true
-      }
-    });
+    return Subject.findById(subjectId).populate('topics');
   }
 
   async updateSubject(subjectId, data) {
-    return prisma.subject.update({ where: { id: subjectId }, data });
+    return Subject.findByIdAndUpdate(subjectId, data, { new: true });
   }
 
   async deleteSubject(subjectId) {
-    return prisma.subject.delete({ where: { id: subjectId } });
+    await Topic.deleteMany({ subjectId });
+    return Subject.findByIdAndDelete(subjectId);
   }
 
   async createTopic(subjectId, data) {
-    return prisma.topic.create({
-      data: { ...data, subjectId }
-    });
+    const topic = new Topic({ ...data, subjectId });
+    return topic.save();
   }
 
   async updateTopic(topicId, data) {
-    const topic = await prisma.topic.update({ where: { id: topicId }, data });
+    const topic = await Topic.findByIdAndUpdate(topicId, data, { new: true });
     
     if (data.isCompleted !== undefined) {
       await this.updateSubjectStatus(topic.subjectId);
@@ -99,24 +93,20 @@ export class SyllabusRepository {
   }
 
   async updateSubjectStatus(subjectId) {
-    const subject = await prisma.subject.findUnique({
-      where: { id: subjectId },
-      include: { topics: true }
-    });
+    const subject = await Subject.findById(subjectId).populate('topics');
 
     if (!subject) return;
 
     const allCompleted = subject.topics.length > 0 && subject.topics.every(t => t.isCompleted);
     
-    await prisma.subject.update({
-      where: { id: subjectId },
-      data: { status: allCompleted ? 'done' : 'ongoing' }
+    await Subject.findByIdAndUpdate(subjectId, {
+      status: allCompleted ? 'done' : 'ongoing'
     });
   }
 
   async deleteTopic(topicId) {
-    const topic = await prisma.topic.findUnique({ where: { id: topicId } });
-    await prisma.topic.delete({ where: { id: topicId } });
+    const topic = await Topic.findById(topicId);
+    await Topic.findByIdAndDelete(topicId);
     if (topic) {
       await this.updateSubjectStatus(topic.subjectId);
     }

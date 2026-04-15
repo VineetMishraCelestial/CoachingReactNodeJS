@@ -1,6 +1,6 @@
 import syllabusRepository from '../repositories/syllabusRepository.js';
 import classRepository from '../repositories/classRepository.js';
-import prisma from '../config/database.js';
+import Topic from '../models/Topic.js';
 import { NotFoundError, BadRequestError } from '../utils/errors.js';
 
 export class SyllabusService {
@@ -86,7 +86,7 @@ export class SyllabusService {
   }
 
   async updateTopic(topicId, instituteId, data) {
-    const topic = await prisma.topic.findUnique({ where: { id: topicId } });
+    const topic = await Topic.findById(topicId);
     if (!topic) {
       throw new NotFoundError('Topic not found');
     }
@@ -102,7 +102,7 @@ export class SyllabusService {
   }
 
   async deleteTopic(topicId, instituteId) {
-    const topic = await prisma.topic.findUnique({ where: { id: topicId } });
+    const topic = await Topic.findById(topicId);
     if (!topic) {
       throw new NotFoundError('Topic not found');
     }

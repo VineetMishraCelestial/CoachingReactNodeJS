@@ -1,58 +1,69 @@
-import prisma from '../config/database.js';
+import Homework from '../models/Homework.js';
+import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
 export class HomeworkRepository {
   async create(data) {
-    return prisma.homework.create({
-      data,
-      include: { class: true }
-    });
+    const homework = new Homework(data);
+    return homework.save();
   }
 
   async findById(id) {
-    return prisma.homework.findUnique({
-      where: { id },
-      include: {
-        class: true,
-        submissions: { include: { student: true } }
-      }
-    });
+    const homework = await Homework.findById(id)
+      .populate('class')
+      .populate({
+        path: 'submissions',
+        populate: {
+          path: 'student'
+        }
+      });
+    return homework;
   }
 
   async findByClass(classId, filters = {}) {
-    return prisma.homework.findMany({
-      where: { classId, ...filters },
-      include: {
-        submissions: true,
-        _count: { select: { submissions: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const homeworks = await Homework.find({ classId, ...filters })
+      .populate({
+        path: 'submissions'
+      })
+      .sort({ createdAt: -1 });
+
+    const result = [];
+    for (const hw of homeworks) {
+      const submissionCount = await HomeworkSubmission.countDocuments({ homeworkId: hw._id });
+      result.push({
+        ...hw.toObject(),
+        submissions: hw.submissions,
+        _count: { submissions: submissionCount }
+      });
+    }
+
+    return result;
   }
 
   async update(id, data) {
-    return prisma.homework.update({ where: { id }, data });
+    return Homework.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id) {
-    return prisma.homework.delete({ where: { id } });
+    await HomeworkSubmission.deleteMany({ homeworkId: id });
+    return Homework.findByIdAndDelete(id);
   }
 
   async addSubmission(homeworkId, studentId) {
-    return prisma.homeworkSubmission.upsert({
-      where: {
-        homeworkId_studentId: { homeworkId, studentId }
-      },
-      create: {
+    const existing = await HomeworkSubmission.findOne({ homeworkId, studentId });
+
+    if (existing) {
+      existing.status = 'submitted';
+      existing.submittedAt = new Date();
+      return existing.save();
+    } else {
+      const submission = new HomeworkSubmission({
         homeworkId,
         studentId,
         status: 'submitted',
         submittedAt: new Date()
-      },
-      update: {
-        status: 'submitted',
-        submittedAt: new Date()
-      }
-    });
+      });
+      return submission.save();
+    }
   }
 }
 
