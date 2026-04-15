@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Syllabus from '../models/Syllabus.js';
 import Subject from '../models/Subject.js';
 import Topic from '../models/Topic.js';
@@ -5,6 +6,9 @@ import { toPlainObject } from '../utils/helpers.js';
 
 export class SyllabusRepository {
   async create(data) {
+    if (data.classId) {
+      data.classId = new mongoose.Types.ObjectId(data.classId);
+    }
     const syllabus = new Syllabus(data);
     const saved = await syllabus.save();
     return toPlainObject(saved.toObject());

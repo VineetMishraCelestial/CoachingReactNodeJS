@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Student from '../models/Student.js';
 import Fee from '../models/Fee.js';
 import Attendance from '../models/Attendance.js';
@@ -6,6 +7,12 @@ import { toPlainObject } from '../utils/helpers.js';
 
 export class StudentRepository {
   async create(data) {
+    if (data.instituteId) {
+      data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
+    }
+    if (data.classId) {
+      data.classId = new mongoose.Types.ObjectId(data.classId);
+    }
     const student = new Student(data);
     const saved = await student.save();
     return toPlainObject(saved.toObject());

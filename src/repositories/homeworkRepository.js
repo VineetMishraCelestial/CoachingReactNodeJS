@@ -1,9 +1,13 @@
+import mongoose from 'mongoose';
 import Homework from '../models/Homework.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
 import { toPlainObject } from '../utils/helpers.js';
 
 export class HomeworkRepository {
   async create(data) {
+    if (data.classId) {
+      data.classId = new mongoose.Types.ObjectId(data.classId);
+    }
     const homework = new Homework(data);
     const saved = await homework.save();
     return toPlainObject(saved.toObject());

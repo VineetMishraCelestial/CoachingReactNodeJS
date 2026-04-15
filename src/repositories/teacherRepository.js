@@ -1,9 +1,13 @@
+import mongoose from 'mongoose';
 import Teacher from '../models/Teacher.js';
 import Class from '../models/Class.js';
 import { toPlainObject } from '../utils/helpers.js';
 
 export class TeacherRepository {
   async create(data) {
+    if (data.instituteId) {
+      data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
+    }
     const teacher = new Teacher(data);
     const saved = await teacher.save();
     return toPlainObject(saved.toObject());

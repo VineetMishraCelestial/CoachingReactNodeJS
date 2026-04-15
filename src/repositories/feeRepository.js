@@ -1,9 +1,13 @@
+import mongoose from 'mongoose';
 import Fee from '../models/Fee.js';
 import Student from '../models/Student.js';
 import { toPlainObject } from '../utils/helpers.js';
 
 export class FeeRepository {
   async create(data) {
+    if (data.studentId) {
+      data.studentId = new mongoose.Types.ObjectId(data.studentId);
+    }
     const fee = new Fee(data);
     const saved = await fee.save();
     return toPlainObject(saved.toObject());
@@ -95,14 +99,15 @@ export class FeeRepository {
   }
 
   async upsert(studentId, month, year, data) {
-    const existing = await Fee.findOne({ studentId, month, year }).lean();
+    const studentObjId = new mongoose.Types.ObjectId(studentId);
+    const existing = await Fee.findOne({ studentId: studentObjId, month, year }).lean();
 
     if (existing) {
       const updated = await Fee.findByIdAndUpdate(existing._id, data, { new: true }).lean();
       return toPlainObject(updated);
     } else {
       const fee = new Fee({
-        studentId,
+        studentId: studentObjId,
         month,
         year,
         ...data
