@@ -86,23 +86,6 @@ export class SyllabusRepository {
     if (topic) await this.updateSubjectStatus(topic.subjectId);
   }
 
-  async findByClass(classId) {
-    return Syllabus.find({ classId }).populate({ path: 'subjects', populate: { path: 'topics' } }).sort({ createdAt: 1 }).lean();
-  }
-
-  async update(id, data) {
-    return Syllabus.findByIdAndUpdate(id, data, { new: true }).lean();
-  }
-
-  async delete(id) {
-    const subjects = await Subject.find({ syllabusId: id }).lean();
-    for (const sub of subjects) {
-      await Topic.deleteMany({ subjectId: sub._id });
-    }
-    await Subject.deleteMany({ syllabusId: id });
-    return Syllabus.findByIdAndDelete(id).lean();
-  }
-
   async getProgressStats(classId) {
     const syllabi = await Syllabus.find({ classId }).select('status').lean();
     const subs = await Subject.find({ syllabusId: { $in: syllabi.map(s => s._id) } }).lean();
@@ -116,46 +99,6 @@ export class SyllabusRepository {
     const s = new Subject({ ...data, syllabusId });
     const saved = await s.save();
     return addId(saved.toObject());
-  }
-
-  async getSubjectById(subjectId) {
-    return Subject.findById(subjectId).populate('topics').lean();
-  }
-
-  async updateSubject(subjectId, data) {
-    return Subject.findByIdAndUpdate(subjectId, data, { new: true }).lean();
-  }
-
-  async deleteSubject(subjectId) {
-    await Topic.deleteMany({ subjectId });
-    return Subject.findByIdAndDelete(subjectId).lean();
-  }
-
-  async createTopic(subjectId, data) {
-    const t = new Topic({ ...data, subjectId });
-    const saved = await t.save();
-    return addId(saved.toObject());
-  }
-
-  async updateTopic(topicId, data) {
-    const topic = await Topic.findByIdAndUpdate(topicId, data, { new: true }).lean();
-    if (data.isCompleted !== undefined && topic) {
-      await this.updateSubjectStatus(topic.subjectId);
-    }
-    return topic;
-  }
-
-  async updateSubjectStatus(subjectId) {
-    const subject = await Subject.findById(subjectId).populate('topics').lean();
-    if (!subject) return;
-    const allDone = subject.topics && subject.topics.length > 0 && subject.topics.every(t => t.isCompleted);
-    await Subject.findByIdAndUpdate(subjectId, { status: allDone ? 'done' : 'ongoing' });
-  }
-
-  async deleteTopic(topicId) {
-    const topic = await Topic.findById(topicId).lean();
-    await Topic.findByIdAndDelete(topicId);
-    if (topic) await this.updateSubjectStatus(topic.subjectId);
   }
 }
 
