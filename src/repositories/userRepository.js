@@ -15,15 +15,18 @@ export class UserRepository {
   }
 
   async findByMobile(mobile) {
-    return User.findOne({ mobile }).lean();
+    const u = await User.findOne({ mobile }).lean();
+    return u ? addId(u) : null;
   }
 
   async findById(id) {
-    return User.findById(id).lean();
+    const u = await User.findById(id).lean();
+    return u ? addId(u) : null;
   }
 
   async update(id, data) {
-    return User.findByIdAndUpdate(id, data, { new: true }).lean();
+    const u = await User.findByIdAndUpdate(id, data, { new: true }).lean();
+    return u ? addId(u) : null;
   }
 
   async findAll(filters = {}, pagination = {}) {

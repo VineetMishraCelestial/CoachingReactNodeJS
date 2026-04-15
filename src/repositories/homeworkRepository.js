@@ -18,7 +18,8 @@ export class HomeworkRepository {
   }
 
   async findById(id) {
-    return Homework.findById(id).populate('class').populate({ path: 'submissions', populate: { path: 'student' } }).lean();
+    const h = await Homework.findById(id).populate('class').populate({ path: 'submissions', populate: { path: 'student' } }).lean();
+    return h ? addId(h) : null;
   }
 
   async findByClass(classId, filters = {}) {

@@ -21,7 +21,8 @@ export class StudentRepository {
   }
 
   async findById(id) {
-    return Student.findById(id).populate('class').lean();
+    const s = await Student.findById(id).populate('class').lean();
+    return s ? addId(s) : null;
   }
 
   async findByInstitute(instituteId, filters = {}, pagination = {}) {

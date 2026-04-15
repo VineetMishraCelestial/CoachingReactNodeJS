@@ -39,7 +39,8 @@ export class AttendanceRepository {
     const cId = new mongoose.Types.ObjectId(classId);
     const existing = await Attendance.findOne({ studentId: sId, classId: cId, date: localDate }).lean();
     if (existing) {
-      return Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
+      const updated = await Attendance.findByIdAndUpdate(existing._id, { status }, { new: true }).lean();
+      return updated ? addId(updated) : null;
     }
     const a = new Attendance({ studentId: sId, classId: cId, date: localDate, status });
     const saved = await a.save();

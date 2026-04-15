@@ -20,11 +20,13 @@ export class TeacherRepository {
   }
 
   async findById(id) {
-    return Teacher.findById(id).lean();
+    const t = await Teacher.findById(id).lean();
+    return t ? addId(t) : null;
   }
 
   async findByMobile(mobile) {
-    return Teacher.findOne({ mobile }).lean();
+    const t = await Teacher.findOne({ mobile }).lean();
+    return t ? addId(t) : null;
   }
 
   async findByInstitute(instituteId, filters = {}) {
@@ -41,20 +43,24 @@ export class TeacherRepository {
   }
 
   async update(id, data) {
-    return Teacher.findByIdAndUpdate(id, data, { new: true }).lean();
+    const t = await Teacher.findByIdAndUpdate(id, data, { new: true }).lean();
+    return t ? addId(t) : null;
   }
 
   async delete(id) {
-    return Teacher.findByIdAndDelete(id).lean();
+    const t = await Teacher.findByIdAndDelete(id).lean();
+    return t ? addId(t) : null;
   }
 
   async findTrash(instituteId) {
     const objId = new mongoose.Types.ObjectId(instituteId);
-    return Teacher.find({ instituteId: objId, isActive: false }).sort({ updatedAt: -1 }).lean();
+    const teachers = await Teacher.find({ instituteId: objId, isActive: false }).sort({ updatedAt: -1 }).lean();
+    return addId(teachers);
   }
 
   async permanentDelete(id) {
-    return Teacher.findByIdAndDelete(id).lean();
+    const t = await Teacher.findByIdAndDelete(id).lean();
+    return t ? addId(t) : null;
   }
 }
 

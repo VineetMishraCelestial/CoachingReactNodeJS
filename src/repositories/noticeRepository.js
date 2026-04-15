@@ -17,22 +17,26 @@ export class NoticeRepository {
   }
 
   async findById(id) {
-    return Notice.findById(id).lean();
+    const n = await Notice.findById(id).lean();
+    return n ? addId(n) : null;
   }
 
   async findByInstitute(instituteId, filters = {}) {
     const objId = new mongoose.Types.ObjectId(instituteId);
     const query = { instituteId: objId };
     if (filters.classId) query.classId = filters.classId;
-    return Notice.find(query).sort({ createdAt: -1 }).lean();
+    const notices = await Notice.find(query).sort({ createdAt: -1 }).lean();
+    return addId(notices);
   }
 
   async update(id, data) {
-    return Notice.findByIdAndUpdate(id, data, { new: true }).lean();
+    const n = await Notice.findByIdAndUpdate(id, data, { new: true }).lean();
+    return n ? addId(n) : null;
   }
 
   async delete(id) {
-    return Notice.findByIdAndDelete(id).lean();
+    const n = await Notice.findByIdAndDelete(id).lean();
+    return n ? addId(n) : null;
   }
 }
 
