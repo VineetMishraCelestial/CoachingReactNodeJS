@@ -6,7 +6,7 @@ export class ClassService {
   async create(instituteId, data) {
     if (data.teacherId) {
       const teacher = await teacherRepository.findById(data.teacherId);
-      if (!teacher || teacher.instituteId !== instituteId) {
+      if (!teacher || teacher.instituteId?.toString() !== instituteId?.toString()) {
         throw new BadRequestError('Invalid teacher');
       }
     }
@@ -43,13 +43,13 @@ export class ClassService {
     if (!classData) {
       throw new NotFoundError('Class not found');
     }
-    if (classData.instituteId !== instituteId) {
+    if (classData.instituteId?.toString() !== instituteId?.toString()) {
       throw new NotFoundError('Class not found');
     }
 
     if (data.teacherId) {
       const teacher = await teacherRepository.findById(data.teacherId);
-      if (!teacher || teacher.instituteId !== instituteId) {
+      if (!teacher || teacher.instituteId?.toString() !== instituteId?.toString()) {
         throw new BadRequestError('Invalid teacher');
       }
     }
@@ -85,7 +85,7 @@ export class ClassService {
     if (!classData) {
       throw new NotFoundError('Class not found');
     }
-    if (classData.instituteId !== instituteId) {
+    if (classData.instituteId?.toString() !== instituteId?.toString()) {
       throw new NotFoundError('Class not found');
     }
 
@@ -107,7 +107,7 @@ export class ClassService {
 
   async restore(id, instituteId) {
     const classData = await classRepository.findById(id);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId?.toString()) {
       throw new NotFoundError('Class not found');
     }
     return classRepository.update(id, { isActive: true });
@@ -115,7 +115,7 @@ export class ClassService {
 
   async permanentDelete(id, instituteId) {
     const classData = await classRepository.findById(id);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId?.toString()) {
       throw new NotFoundError('Class not found');
     }
     return classRepository.permanentDelete(id);
