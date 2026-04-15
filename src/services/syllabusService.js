@@ -6,7 +6,7 @@ import { NotFoundError, BadRequestError } from '../utils/errors.js';
 export class SyllabusService {
   async create(classId, instituteId, data) {
     const classData = await classRepository.findById(classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -18,7 +18,7 @@ export class SyllabusService {
 
   async getByClass(classId, instituteId) {
     const classData = await classRepository.findById(classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -35,7 +35,7 @@ export class SyllabusService {
     }
 
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -49,7 +49,7 @@ export class SyllabusService {
     }
 
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
     }
 
@@ -63,7 +63,7 @@ export class SyllabusService {
     }
 
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid syllabus');
     }
 
@@ -78,7 +78,7 @@ export class SyllabusService {
 
     const syllabus = await syllabusRepository.findById(subject.syllabusId);
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid subject');
     }
 
@@ -94,7 +94,7 @@ export class SyllabusService {
     const subject = await syllabusRepository.getSubjectById(topic.subjectId);
     const syllabus = await syllabusRepository.findById(subject.syllabusId);
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid topic');
     }
 
@@ -110,7 +110,7 @@ export class SyllabusService {
     const subject = await syllabusRepository.getSubjectById(topic.subjectId);
     const syllabus = await syllabusRepository.findById(subject.syllabusId);
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid topic');
     }
 
@@ -124,7 +124,7 @@ export class SyllabusService {
     }
 
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid syllabus');
     }
 
@@ -139,7 +139,7 @@ export class SyllabusService {
 
     const syllabus = await syllabusRepository.findById(subject.syllabusId);
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid subject');
     }
 
@@ -154,7 +154,7 @@ export class SyllabusService {
 
     const syllabus = await syllabusRepository.findById(subject.syllabusId);
     const classData = await classRepository.findById(syllabus.classId);
-    if (!classData || classData.instituteId !== instituteId) {
+    if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid subject');
     }
 
