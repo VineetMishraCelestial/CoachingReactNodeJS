@@ -27,7 +27,7 @@ export class AttendanceService {
     const students = classData.students;
 
     return students.map(student => {
-      const attendance = attendances.find(a => a.studentId === student.id);
+      const attendance = attendances.find(a => a.studentId?.toString() === student.id);
       return {
         studentId: student.id,
         name: student.name,
@@ -46,7 +46,7 @@ export class AttendanceService {
     const students = classData.students;
 
     return students.map(student => {
-      const attendance = attendances.find(a => a.studentId === student.id);
+      const attendance = attendances.find(a => a.studentId?.toString() === student.id);
       return {
         studentId: student.id,
         name: student.name,
