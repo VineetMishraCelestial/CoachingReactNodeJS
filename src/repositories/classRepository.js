@@ -23,12 +23,12 @@ export class ClassRepository {
 
   async findById(id) {
     const cls = await Class.findById(id)
-      .populate('teacher', '_id name subject mobile email')
+      .populate('teacherId', '_id name subject mobile email')
       .populate('students', '_id name parentMobile joiningDate').lean();
     if (!cls) return null;
     return {
       ...addId(cls),
-      teacher: cls.teacher ? addId(cls.teacher) : null,
+      teacher: cls.teacherId ? addId(cls.teacherId) : null,
       students: cls.students ? addId(cls.students) : null
     };
   }
@@ -36,14 +36,14 @@ export class ClassRepository {
   async findByInstitute(instituteId, filters = {}) {
     const objId = new mongoose.Types.ObjectId(instituteId);
     const classes = await Class.find({ instituteId: objId, isActive: true, ...filters })
-      .populate('teacher', '_id name subject').sort({ createdAt: -1 }).lean();
+      .populate('teacherId', '_id name subject').sort({ createdAt: -1 }).lean();
     
     const result = [];
     for (const cls of classes) {
       const count = await Student.countDocuments({ classId: cls._id, isActive: true });
       result.push({
         ...addId(cls),
-        teacher: cls.teacher ? addId(cls.teacher) : null,
+        teacher: cls.teacherId ? addId(cls.teacherId) : null,
         _count: { students: count }
       });
     }
@@ -62,10 +62,10 @@ export class ClassRepository {
 
   async findTrash(instituteId) {
     const objId = new mongoose.Types.ObjectId(instituteId);
-    const classes = await Class.find({ instituteId: objId, isActive: false }).populate('teacher', '_id name subject').sort({ updatedAt: -1 }).lean();
+    const classes = await Class.find({ instituteId: objId, isActive: false }).populate('teacherId', '_id name subject').sort({ updatedAt: -1 }).lean();
     return classes.map(c => ({
       ...addId(c),
-      teacher: c.teacher ? addId(c.teacher) : null
+      teacher: c.teacherId ? addId(c.teacherId) : null
     }));
   }
 
