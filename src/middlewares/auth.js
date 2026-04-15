@@ -14,9 +14,9 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, config.jwtSecret);
     
-    const user = await User.findById(decoded.userId).select(
-      '_id mobile role name instituteName isActive'
-    );
+    const user = await User.findById(decoded.userId)
+      .select('_id mobile role name instituteName isActive')
+      .lean();
 
     if (!user || !user.isActive) {
       throw new UnauthorizedError('User not found or inactive');
