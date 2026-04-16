@@ -33,8 +33,21 @@ export class SyllabusRepository {
     const result = [];
     for (const syllabus of syllabi) {
       const syllabusWithId = addId(syllabus);
-      const subjects = await Subject.find({ syllabusId: syllabus._id }).populate('topics').lean();
-      syllabusWithId.subjects = addId(subjects);
+      const subjects = await Subject.find({ syllabusId: syllabus._id }).lean();
+      const subjectIds = subjects.map(s => s._id);
+      let topics = [];
+      if (subjectIds.length > 0) {
+        topics = await Topic.find({ subjectId: { $in: subjectIds } }).lean();
+      }
+      const topicsBySubject = topics.reduce((acc, t) => {
+        if (!acc[t.subjectId]) acc[t.subjectId] = [];
+        acc[t.subjectId].push(addId(t));
+        return acc;
+      }, {});
+      syllabusWithId.subjects = subjects.map(s => ({
+        ...addId(s),
+        topics: topicsBySubject[s._id] || []
+      }));
       result.push(syllabusWithId);
     }
     return result;
