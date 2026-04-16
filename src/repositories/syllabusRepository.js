@@ -99,13 +99,20 @@ export class SyllabusRepository {
   }
 
   async getProgressStats(classId) {
-    const cId = new mongoose.Types.ObjectId(classId);
-    const syllabi = await Syllabus.find({ classId: cId }).select('status').lean();
-    const subs = await Subject.find({ syllabusId: { $in: syllabi.map(s => s._id) } }).lean();
-    const done = subs.filter(s => s.status === 'done').length;
-    const ongoing = subs.filter(s => s.status === 'ongoing').length;
-    const pending = subs.filter(s => s.status === 'pending').length;
-    return { total: subs.length, done, ongoing, pending, percentage: subs.length ? Math.round((done / subs.length) * 100) : 0 };
+    try {
+      const cId = new mongoose.Types.ObjectId(classId);
+      const syllabi = await Syllabus.find({ classId: cId }).select('status').lean();
+      const syllabusIds = syllabi.map(s => s._id);
+      const query = syllabusIds.length > 0 ? { syllabusId: { $in: syllabusIds } } : { syllabusId: null };
+      const subs = await Subject.find(query).lean();
+      const done = subs.filter(s => s.status === 'done').length;
+      const ongoing = subs.filter(s => s.status === 'ongoing').length;
+      const pending = subs.filter(s => s.status === 'pending').length;
+      return { total: subs.length, done, ongoing, pending, percentage: subs.length ? Math.round((done / subs.length) * 100) : 0 };
+    } catch (error) {
+      console.error('Error in getProgressStats:', error);
+      return { total: 0, done: 0, ongoing: 0, pending: 0, percentage: 0 };
+    }
   }
 
   async createSubject(syllabusId, data) {

@@ -22,7 +22,14 @@ export class SyllabusService {
       throw new BadRequestError('Invalid class');
     }
 
-    const stats = await syllabusRepository.getProgressStats(classId);
+    let stats;
+    try {
+      stats = await syllabusRepository.getProgressStats(classId);
+    } catch (err) {
+      console.error('Error getting progress stats:', err);
+      stats = { total: 0, done: 0, ongoing: 0, pending: 0, percentage: 0 };
+    }
+
     const syllabi = await syllabusRepository.findByClass(classId);
 
     return { syllabi, stats };
