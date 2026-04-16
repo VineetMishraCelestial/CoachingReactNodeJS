@@ -45,16 +45,9 @@ export class StudentService {
       throw new NotFoundError('Student not found');
     }
     const enriched = this.enrichStudent(student);
-    const latestFee = student.fees[0];
     return {
       ...enriched,
-      initialFee: latestFee ? {
-        amount: latestFee.amount,
-        status: latestFee.status,
-        paymentMode: latestFee.paymentMode,
-        paidDate: latestFee.paidDate,
-        note: latestFee.note
-      } : null
+      initialFee: null
     };
   }
 
