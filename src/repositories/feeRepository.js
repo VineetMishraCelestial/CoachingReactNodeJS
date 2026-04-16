@@ -22,6 +22,7 @@ export class FeeRepository {
     if (!fee) return null;
     return {
       ...addId(fee),
+      studentId: fee.studentId?._id,
       student: fee.studentId ? addId(fee.studentId) : null
     };
   }
