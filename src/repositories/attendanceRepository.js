@@ -23,6 +23,7 @@ export class AttendanceRepository {
     const result = await Attendance.find({ classId: cId, date: { $gte: start, $lte: end } }).populate('studentId').lean();
     return result.map(a => ({
       ...addId(a),
+      studentId: a.studentId?._id,
       student: a.studentId ? addId(a.studentId) : null
     }));
   }
