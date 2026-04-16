@@ -22,8 +22,8 @@ export class SyllabusService {
       throw new BadRequestError('Invalid class');
     }
 
-    const syllabi = await syllabusRepository.findByClass(classId);
     const stats = await syllabusRepository.getProgressStats(classId);
+    const syllabi = await syllabusRepository.findByClass(classId);
 
     return { syllabi, stats };
   }
