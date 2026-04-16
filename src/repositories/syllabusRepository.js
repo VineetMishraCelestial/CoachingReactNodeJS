@@ -22,8 +22,21 @@ export class SyllabusRepository {
     const s = await Syllabus.findById(id).lean();
     if (!s) return null;
     const result = addId(s);
-    const subjects = await Subject.find({ syllabusId: s._id }).populate('topics').lean();
-    result.subjects = addId(subjects);
+    const subjects = await Subject.find({ syllabusId: s._id }).lean();
+    const subjectIds = subjects.map(s => s._id);
+    let topics = [];
+    if (subjectIds.length > 0) {
+      topics = await Topic.find({ subjectId: { $in: subjectIds } }).lean();
+    }
+    const topicsBySubject = topics.reduce((acc, t) => {
+      if (!acc[t.subjectId]) acc[t.subjectId] = [];
+      acc[t.subjectId].push(addId(t));
+      return acc;
+    }, {});
+    result.subjects = subjects.map(s => ({
+      ...addId(s),
+      topics: topicsBySubject[s._id] || []
+    }));
     return result;
   }
 
@@ -69,8 +82,10 @@ export class SyllabusRepository {
   }
 
   async getSubjectById(subjectId) {
-    const sub = await Subject.findById(subjectId).populate('topics').lean();
-    return sub ? addId(sub) : null;
+    const sub = await Subject.findById(subjectId).lean();
+    if (!sub) return null;
+    const topics = await Topic.find({ subjectId: sub._id }).lean();
+    return { ...addId(sub), topics: addId(topics) };
   }
 
   async updateSubject(subjectId, data) {
@@ -99,9 +114,10 @@ export class SyllabusRepository {
   }
 
   async updateSubjectStatus(subjectId) {
-    const subject = await Subject.findById(subjectId).populate('topics').lean();
+    const subject = await Subject.findById(subjectId).lean();
     if (!subject) return;
-    const allDone = subject.topics && subject.topics.length > 0 && subject.topics.every(t => t.isCompleted);
+    const topics = await Topic.find({ subjectId }).lean();
+    const allDone = topics && topics.length > 0 && topics.every(t => t.isCompleted);
     await Subject.findByIdAndUpdate(subjectId, { status: allDone ? 'done' : 'ongoing' });
   }
 
