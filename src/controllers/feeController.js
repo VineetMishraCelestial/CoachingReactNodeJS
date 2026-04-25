@@ -57,8 +57,8 @@ export class FeeController {
 
   async recordPayment(req, res, next) {
     try {
-      const { paymentMode } = req.body;
-      const fee = await feeService.recordPayment(req.params.id, { paymentMode });
+      const { paymentMode, discount, total } = req.body;
+      const fee = await feeService.recordPayment(req.params.id, { paymentMode, discount, total });
       return successResponse(res, fee, 'Payment recorded');
     } catch (error) {
       next(error);

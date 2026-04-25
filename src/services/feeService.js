@@ -12,6 +12,7 @@ export class FeeService {
 
     return feeRepository.upsert(studentId, data.month, data.year, {
       amount: data.amount || student.class.monthlyFee,
+      discount: data.discount || 0,
       status: data.status || 'pending',
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       paymentMode: data.paymentMode
@@ -55,8 +56,12 @@ export class FeeService {
       throw new NotFoundError('Fee record not found');
     }
 
+    const finalAmount = data.total !== undefined ? data.total : fee.amount;
+    const discount = data.discount || 0;
+
     return feeRepository.upsert(fee.studentId, fee.month, fee.year, {
-      amount: fee.amount,
+      amount: finalAmount,
+      discount,
       status: 'paid',
       paidDate: new Date(),
       paymentMode: data.paymentMode || 'cash'

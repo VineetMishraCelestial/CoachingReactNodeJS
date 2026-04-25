@@ -29,6 +29,10 @@ const feeSchema = new mongoose.Schema({
   note: {
     type: String
   },
+  discount: {
+    type: Number,
+    default: 0
+  },
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
