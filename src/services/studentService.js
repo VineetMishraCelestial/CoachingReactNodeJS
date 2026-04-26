@@ -75,8 +75,14 @@ export class StudentService {
     }
     let tempPin = student.tempPin;
     if (!tempPin && student.parentId) {
-      const parentUser = await userRepository.findById(student.parentId);
-      if (parentUser?.tempPin) {
+      let parentUser = await userRepository.findById(student.parentId);
+      if (parentUser) {
+        if (!parentUser.tempPin) {
+          const newPin = generatePIN();
+          const bcrypt = (await import('bcryptjs')).default;
+          const hashedPassword = await bcrypt.hash(newPin, 12);
+          parentUser = await userRepository.update(student.parentId, { password: hashedPassword, tempPin: newPin });
+        }
         tempPin = parentUser.tempPin;
       }
     }
