@@ -73,7 +73,14 @@ export class StudentService {
     if (!student) {
       throw new NotFoundError('Student not found');
     }
-    const enriched = this.enrichStudent(student);
+    let tempPin = student.tempPin;
+    if (!tempPin && student.parentId) {
+      const parentUser = await userRepository.findById(student.parentId);
+      if (parentUser?.tempPin) {
+        tempPin = parentUser.tempPin;
+      }
+    }
+    const enriched = this.enrichStudent(student, null, tempPin);
     return {
       ...enriched,
       initialFee: null
