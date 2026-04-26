@@ -21,13 +21,14 @@ export class StudentService {
     let parentPin = data.parentPin;
 
     if (!parentId) {
-      let parentUser = await userRepository.findByMobile(data.mobile);
+      const parentMobile = data.mobile || data.parentMobile;
+      let parentUser = await userRepository.findByMobile(parentMobile);
       if (!parentUser) {
         parentPin = generatePIN();
         const bcrypt = (await import('bcryptjs')).default;
         const hashedPassword = await bcrypt.hash(parentPin, 12);
         parentUser = await userRepository.create({
-          mobile: data.mobile,
+          mobile: parentMobile,
           password: hashedPassword,
           role: 'parent',
           name: studentData.name + ' Parent'
