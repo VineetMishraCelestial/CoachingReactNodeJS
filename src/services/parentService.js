@@ -27,7 +27,11 @@ export class ParentService {
   async getChildSyllabus(parentId, studentId) {
     await this.validateChild(parentId, studentId);
     const student = await studentRepository.findById(studentId);
-    return syllabusRepository.findByClass(student.classId);
+    const classId = student.classId || (student.class && student.class.id);
+    if (!classId) {
+      throw new NotFoundError('Student has no class assigned');
+    }
+    return syllabusRepository.findByClass(classId);
   }
 
   async updateProfile(parentId, data) {
@@ -52,7 +56,10 @@ export class ParentService {
 
   async validateChild(parentId, studentId) {
     const student = await studentRepository.findById(studentId);
-    if (!student || student.parentId?.toString() !== parentId) {
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+    if (student.parentId?.toString() !== parentId.toString()) {
       throw new ForbiddenError('Access denied');
     }
   }
