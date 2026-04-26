@@ -31,8 +31,11 @@ export class StudentService {
           mobile: parentMobile,
           password: hashedPassword,
           role: 'parent',
-          name: studentData.name + ' Parent'
+          name: studentData.name + ' Parent',
+          tempPin
         });
+      } else if (parentUser.role === 'parent') {
+        parentPin = null;
       }
       parentId = parentUser.id;
     }
@@ -153,9 +156,12 @@ export class StudentService {
   }
 
   enrichStudent(student, classData = null, parentPin = null) {
-    const { password, parentId, ...sanitized } = student;
+    const { password, parentId, tempPin, ...sanitized } = student;
     if (parentPin) {
-      return { ...sanitized, parentPin, class: classData };
+      return { ...sanitized, parentPin, tempPin, class: classData };
+    }
+    if (tempPin) {
+      return { ...sanitized, tempPin, class: classData };
     }
     return { ...sanitized, class: classData };
   }
