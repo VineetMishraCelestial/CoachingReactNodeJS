@@ -27,7 +27,7 @@ export class ParentService {
   async getChildSyllabus(parentId, studentId) {
     await this.validateChild(parentId, studentId);
     const student = await studentRepository.findById(studentId);
-    const classId = student.classId || (student.class && student.class.id);
+    const classId = student.class?.id;
     if (!classId) {
       throw new NotFoundError('Student has no class assigned');
     }
