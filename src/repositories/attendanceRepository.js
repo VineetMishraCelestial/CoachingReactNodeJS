@@ -48,6 +48,14 @@ export class AttendanceRepository {
     const saved = await a.save();
     return addId(saved.toObject());
   }
+
+  async findByStudentDateWise(studentId, month, year) {
+    const sId = new mongoose.Types.ObjectId(studentId);
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    const records = await Attendance.find({ studentId: sId, date: { $gte: startDate, $lte: endDate } }).sort({ date: 1 }).lean();
+    return records.map(a => addId(a));
+  }
 }
 
 export default new AttendanceRepository();

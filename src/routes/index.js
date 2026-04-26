@@ -9,11 +9,13 @@ import syllabusRoutes from './syllabusRoutes.js';
 import homeworkRoutes from './homeworkRoutes.js';
 import noticeRoutes from './noticeRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
+import parentRoutes from './parentRoutes.js';
 import { authenticate } from '../middlewares/auth.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/parent', authenticate, parentRoutes);
 
 router.use('/classes', authenticate, classRoutes);
 router.use('/teachers', authenticate, teacherRoutes);

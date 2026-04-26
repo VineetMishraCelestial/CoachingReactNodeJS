@@ -15,6 +15,7 @@ export class StudentRepository {
   async create(data) {
     if (data.instituteId) data.instituteId = new mongoose.Types.ObjectId(data.instituteId);
     if (data.classId) data.classId = new mongoose.Types.ObjectId(data.classId);
+    if (data.parentId) data.parentId = new mongoose.Types.ObjectId(data.parentId);
     const s = new Student(data);
     const saved = await s.save();
     return addId(saved.toObject());
@@ -86,6 +87,15 @@ export class StudentRepository {
     const endDate = new Date(year, month, 0);
     const count = await Attendance.countDocuments({ studentId: sId, date: { $gte: startDate, $lte: endDate } });
     return { attended: count, total: endDate.getDate() };
+  }
+
+  async findByParentId(parentId) {
+    const pId = new mongoose.Types.ObjectId(parentId);
+    const students = await Student.find({ parentId: pId, isActive: true }).populate('classId').lean();
+    return students.map(s => ({
+      ...addId(s),
+      class: s.classId ? addId(s.classId) : null
+    }));
   }
 }
 

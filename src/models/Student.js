@@ -9,6 +9,10 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   address: {
     type: String
   },

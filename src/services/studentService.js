@@ -1,7 +1,12 @@
 import studentRepository from '../repositories/studentRepository.js';
 import classRepository from '../repositories/classRepository.js';
 import feeRepository from '../repositories/feeRepository.js';
+import userRepository from '../repositories/userRepository.js';
 import { NotFoundError, BadRequestError } from '../utils/errors.js';
+
+function generatePIN() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 export class StudentService {
   async create(instituteId, data) {
@@ -11,11 +16,31 @@ export class StudentService {
     }
 
     const { initialFee, joiningDate, ...studentData } = data;
-    
+
+    let parentId = data.parentId;
+    let parentPin = data.parentPin;
+
+    if (!parentId) {
+      let parentUser = await userRepository.findByMobile(data.parentMobile);
+      if (!parentUser) {
+        parentPin = generatePIN();
+        const bcrypt = (await import('bcryptjs')).default;
+        const hashedPassword = await bcrypt.hash(parentPin, 12);
+        parentUser = await userRepository.create({
+          mobile: data.parentMobile,
+          password: hashedPassword,
+          role: 'parent',
+          name: studentData.name + ' Parent'
+        });
+      }
+      parentId = parentUser.id;
+    }
+
     const student = await studentRepository.create({
       ...studentData,
       joiningDate: joiningDate ? new Date(joiningDate) : undefined,
-      instituteId
+      instituteId,
+      parentId
     });
 
     if (initialFee) {
@@ -36,7 +61,7 @@ export class StudentService {
       });
     }
 
-    return this.enrichStudent(student, classData);
+    return this.enrichStudent(student, classData, parentPin);
   }
 
   async getById(id) {
@@ -126,9 +151,12 @@ export class StudentService {
     return studentRepository.getAttendanceStats(studentId, month || new Date().getMonth() + 1, year || new Date().getFullYear());
   }
 
-  enrichStudent(student, classData = null) {
-    const { password, ...sanitized } = student;
-    return sanitized;
+  enrichStudent(student, classData = null, parentPin = null) {
+    const { password, parentId, ...sanitized } = student;
+    if (parentPin) {
+      return { ...sanitized, parentPin, class: classData };
+    }
+    return { ...sanitized, class: classData };
   }
 }
 
