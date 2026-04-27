@@ -22,18 +22,26 @@ export class StudentService {
 
     if (!parentId) {
       const parentMobile = data.mobile || data.parentMobile;
+      console.log('[StudentService] Checking for parent with mobile:', parentMobile);
       let parentUser = await userRepository.findByMobile(parentMobile);
       if (!parentUser) {
+        console.log('[StudentService] Parent not found, creating new parent with mobile:', parentMobile);
         parentPin = generatePIN();
         const bcrypt = (await import('bcryptjs')).default;
         const hashedPassword = await bcrypt.hash(parentPin, 12);
-        parentUser = await userRepository.create({
-          mobile: parentMobile,
-          password: hashedPassword,
-          role: 'parent',
-          name: studentData.name + ' Parent',
-          tempPin
-        });
+        try {
+          parentUser = await userRepository.create({
+            mobile: parentMobile,
+            password: hashedPassword,
+            role: 'parent',
+            name: studentData.name + ' Parent',
+            tempPin
+          });
+          console.log('[StudentService] Parent created successfully:', parentUser?.id);
+        } catch (createError) {
+          console.error('[StudentService] Error creating parent:', createError.message, createError.stack);
+          throw createError;
+        }
       } else if (parentUser.role === 'parent') {
         parentPin = null;
       }
