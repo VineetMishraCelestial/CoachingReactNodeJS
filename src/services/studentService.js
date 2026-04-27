@@ -35,7 +35,7 @@ export class StudentService {
             password: hashedPassword,
             role: 'parent',
             name: studentData.name + ' Parent',
-            tempPin
+            tempPin: parentPin
           });
           console.log('[StudentService] Parent created successfully:', parentUser?.id);
         } catch (createError) {
