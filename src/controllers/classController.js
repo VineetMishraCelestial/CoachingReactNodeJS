@@ -4,7 +4,7 @@ import { successResponse, paginatedResponse } from '../utils/response.js';
 export class ClassController {
   async create(req, res, next) {
     try {
-      const classData = await classService.create(req.user.id, req.body);
+      const classData = await classService.create(req.user.instituteId, req.body);
       return successResponse(res, classData, 'Class created successfully', 201);
     } catch (error) {
       next(error);
@@ -13,7 +13,7 @@ export class ClassController {
 
   async getAll(req, res, next) {
     try {
-      const classes = await classService.getByInstitute(req.user.id);
+      const classes = await classService.getByInstitute(req.user.instituteId);
       return successResponse(res, classes, 'Classes retrieved');
     } catch (error) {
       next(error);
@@ -31,7 +31,7 @@ export class ClassController {
 
   async update(req, res, next) {
     try {
-      const classData = await classService.update(req.params.id, req.user.id, req.body);
+      const classData = await classService.update(req.params.id, req.user.instituteId, req.body);
       return successResponse(res, classData, 'Class updated');
     } catch (error) {
       next(error);
@@ -40,7 +40,7 @@ export class ClassController {
 
   async delete(req, res, next) {
     try {
-      await classService.delete(req.params.id, req.user.id);
+      await classService.delete(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Class deleted');
     } catch (error) {
       next(error);
@@ -49,7 +49,7 @@ export class ClassController {
 
   async getTrash(req, res, next) {
     try {
-      const classes = await classService.getTrash(req.user.id);
+      const classes = await classService.getTrash(req.user.instituteId);
       return successResponse(res, classes, 'Trash retrieved');
     } catch (error) {
       next(error);
@@ -58,7 +58,7 @@ export class ClassController {
 
   async restore(req, res, next) {
     try {
-      await classService.restore(req.params.id, req.user.id);
+      await classService.restore(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Class restored');
     } catch (error) {
       next(error);
@@ -67,7 +67,7 @@ export class ClassController {
 
   async permanentDelete(req, res, next) {
     try {
-      await classService.permanentDelete(req.params.id, req.user.id);
+      await classService.permanentDelete(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Class permanently deleted');
     } catch (error) {
       next(error);
@@ -76,7 +76,7 @@ export class ClassController {
 
   async getStats(req, res, next) {
     try {
-      const stats = await classService.getStats(req.user.id);
+      const stats = await classService.getStats(req.user.instituteId);
       return successResponse(res, stats, 'Stats retrieved');
     } catch (error) {
       next(error);

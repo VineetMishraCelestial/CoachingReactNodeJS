@@ -10,21 +10,21 @@ import homeworkRoutes from './homeworkRoutes.js';
 import noticeRoutes from './noticeRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import parentRoutes from './parentRoutes.js';
-import { authenticate } from '../middlewares/auth.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/parent', authenticate, parentRoutes);
 
-router.use('/classes', authenticate, classRoutes);
-router.use('/teachers', authenticate, teacherRoutes);
-router.use('/students', authenticate, studentRoutes);
-router.use('/attendance', authenticate, attendanceRoutes);
-router.use('/fees', authenticate, feeRoutes);
-router.use('/syllabus', authenticate, syllabusRoutes);
-router.use('/homework', authenticate, homeworkRoutes);
-router.use('/notices', authenticate, noticeRoutes);
-router.use('/dashboard', authenticate, dashboardRoutes);
+router.use('/classes', authenticate, authorize('institute', 'teacher'), classRoutes);
+router.use('/teachers', authenticate, authorize('institute'), teacherRoutes);
+router.use('/students', authenticate, authorize('institute', 'teacher'), studentRoutes);
+router.use('/attendance', authenticate, authorize('institute', 'teacher'), attendanceRoutes);
+router.use('/fees', authenticate, authorize('institute'), feeRoutes);
+router.use('/syllabus', authenticate, authorize('institute', 'teacher'), syllabusRoutes);
+router.use('/homework', authenticate, authorize('institute'), homeworkRoutes);
+router.use('/notices', authenticate, authorize('institute'), noticeRoutes);
+router.use('/dashboard', authenticate, authorize('institute'), dashboardRoutes);
 
 export default router;

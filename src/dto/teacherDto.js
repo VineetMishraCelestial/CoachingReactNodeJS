@@ -22,6 +22,9 @@ export const createTeacherValidation = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Invalid email format'),
+  body('password')
+    .optional()
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ];
 
 export const loginTeacherValidation = [

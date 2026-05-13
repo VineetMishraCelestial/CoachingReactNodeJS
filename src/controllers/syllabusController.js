@@ -5,7 +5,7 @@ export class SyllabusController {
   async create(req, res, next) {
     try {
       const { classId, ...data } = req.body;
-      const syllabus = await syllabusService.create(classId, req.user.id, data);
+      const syllabus = await syllabusService.create(classId, req.user.instituteId, data, req.user);
       return successResponse(res, syllabus, 'Syllabus created', 201);
     } catch (error) {
       next(error);
@@ -14,7 +14,7 @@ export class SyllabusController {
 
   async getByClass(req, res, next) {
     try {
-      const result = await syllabusService.getByClass(req.params.classId, req.user.id);
+      const result = await syllabusService.getByClass(req.params.classId, req.user.instituteId);
       return successResponse(res, result, 'Syllabus retrieved');
     } catch (error) {
       next(error);
@@ -23,7 +23,7 @@ export class SyllabusController {
 
   async update(req, res, next) {
     try {
-      const syllabus = await syllabusService.update(req.params.id, req.user.id, req.body);
+      const syllabus = await syllabusService.update(req.params.id, req.user.instituteId, req.body, req.user);
       return successResponse(res, syllabus, 'Syllabus updated');
     } catch (error) {
       next(error);
@@ -32,7 +32,7 @@ export class SyllabusController {
 
   async delete(req, res, next) {
     try {
-      await syllabusService.delete(req.params.id, req.user.id);
+      await syllabusService.delete(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Syllabus removed');
     } catch (error) {
       next(error);
@@ -41,7 +41,7 @@ export class SyllabusController {
 
   async createSubject(req, res, next) {
     try {
-      const subject = await syllabusService.createSubject(req.params.syllabusId, req.user.id, req.body);
+      const subject = await syllabusService.createSubject(req.params.syllabusId, req.user.instituteId, req.body, req.user);
       return successResponse(res, subject, 'Subject added', 201);
     } catch (error) {
       next(error);
@@ -50,7 +50,7 @@ export class SyllabusController {
 
   async createTopic(req, res, next) {
     try {
-      const topic = await syllabusService.createTopic(req.params.subjectId, req.user.id, req.body);
+      const topic = await syllabusService.createTopic(req.params.subjectId, req.user.instituteId, req.body, req.user);
       return successResponse(res, topic, 'Topic added', 201);
     } catch (error) {
       next(error);
@@ -59,7 +59,7 @@ export class SyllabusController {
 
   async updateTopic(req, res, next) {
     try {
-      const topic = await syllabusService.updateTopic(req.params.topicId, req.user.id, req.body);
+      const topic = await syllabusService.updateTopic(req.params.topicId, req.user.instituteId, req.body, req.user);
       return successResponse(res, topic, 'Topic updated');
     } catch (error) {
       next(error);
@@ -68,7 +68,7 @@ export class SyllabusController {
 
   async deleteTopic(req, res, next) {
     try {
-      await syllabusService.deleteTopic(req.params.topicId, req.user.id);
+      await syllabusService.deleteTopic(req.params.topicId, req.user.instituteId);
       return successResponse(res, null, 'Topic removed');
     } catch (error) {
       next(error);
@@ -77,7 +77,7 @@ export class SyllabusController {
 
   async getSyllabusById(req, res, next) {
     try {
-      const syllabus = await syllabusService.getSyllabusById(req.params.id, req.user.id);
+      const syllabus = await syllabusService.getSyllabusById(req.params.id, req.user.instituteId);
       return successResponse(res, syllabus, 'Syllabus retrieved');
     } catch (error) {
       next(error);
@@ -86,7 +86,7 @@ export class SyllabusController {
 
   async deleteSubject(req, res, next) {
     try {
-      await syllabusService.deleteSubject(req.params.subjectId, req.user.id);
+      await syllabusService.deleteSubject(req.params.subjectId, req.user.instituteId);
       return successResponse(res, null, 'Subject removed');
     } catch (error) {
       next(error);
@@ -95,7 +95,7 @@ export class SyllabusController {
 
   async updateSubject(req, res, next) {
     try {
-      const subject = await syllabusService.updateSubject(req.params.subjectId, req.user.id, req.body);
+      const subject = await syllabusService.updateSubject(req.params.subjectId, req.user.instituteId, req.body, req.user);
       return successResponse(res, subject, 'Subject updated');
     } catch (error) {
       next(error);

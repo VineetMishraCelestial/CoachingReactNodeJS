@@ -4,7 +4,7 @@ import { successResponse, paginatedResponse } from '../utils/response.js';
 export class StudentController {
   async create(req, res, next) {
     try {
-      const student = await studentService.create(req.user.id, req.body);
+      const student = await studentService.create(req.user.instituteId, req.body);
       return successResponse(res, student, 'Student added successfully', 201);
     } catch (error) {
       next(error);
@@ -17,7 +17,7 @@ export class StudentController {
       const filters = {};
       if (classId) filters.classId = classId;
 
-      const result = await studentService.getByInstitute(req.user.id, filters, { page: parseInt(page), limit: parseInt(limit) });
+      const result = await studentService.getByInstitute(req.user.instituteId, filters, { page: parseInt(page), limit: parseInt(limit) });
       return paginatedResponse(res, result.students, {
         page: result.page,
         limit: result.limit,
@@ -40,7 +40,7 @@ export class StudentController {
 
   async update(req, res, next) {
     try {
-      const student = await studentService.update(req.params.id, req.user.id, req.body);
+      const student = await studentService.update(req.params.id, req.user.instituteId, req.body);
       return successResponse(res, student, 'Student updated');
     } catch (error) {
       next(error);
@@ -49,7 +49,7 @@ export class StudentController {
 
   async delete(req, res, next) {
     try {
-      await studentService.delete(req.params.id, req.user.id);
+      await studentService.delete(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Student deleted');
     } catch (error) {
       next(error);
@@ -59,7 +59,7 @@ export class StudentController {
   async getTrash(req, res, next) {
     try {
       const { page = 1, limit = 20 } = req.query;
-      const result = await studentService.getTrash(req.user.id, { page: parseInt(page), limit: parseInt(limit) });
+      const result = await studentService.getTrash(req.user.instituteId, { page: parseInt(page), limit: parseInt(limit) });
       return paginatedResponse(res, result.students, {
         page: result.page,
         limit: result.limit,
@@ -73,7 +73,7 @@ export class StudentController {
 
   async restore(req, res, next) {
     try {
-      await studentService.restore(req.params.id, req.user.id);
+      await studentService.restore(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Student restored');
     } catch (error) {
       next(error);
@@ -82,7 +82,7 @@ export class StudentController {
 
   async permanentDelete(req, res, next) {
     try {
-      await studentService.permanentDelete(req.params.id, req.user.id);
+      await studentService.permanentDelete(req.params.id, req.user.instituteId);
       return successResponse(res, null, 'Student permanently deleted');
     } catch (error) {
       next(error);

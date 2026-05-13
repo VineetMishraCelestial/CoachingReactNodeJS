@@ -4,7 +4,7 @@ import Topic from '../models/Topic.js';
 import { NotFoundError, BadRequestError } from '../utils/errors.js';
 
 export class SyllabusService {
-  async create(classId, instituteId, data) {
+  async create(classId, instituteId, data, user) {
     const classData = await classRepository.findById(classId);
     if (!classData || classData.instituteId?.toString() !== instituteId) {
       throw new BadRequestError('Invalid class');
@@ -12,7 +12,9 @@ export class SyllabusService {
 
     return syllabusRepository.create({
       ...data,
-      classId
+      classId,
+      createdBy: { userId: user.id, name: user.name, role: user.role },
+      updatedBy: { userId: user.id, name: user.name, role: user.role }
     });
   }
 
@@ -35,7 +37,7 @@ export class SyllabusService {
     return { syllabi, stats };
   }
 
-  async update(id, instituteId, data) {
+  async update(id, instituteId, data, user) {
     const syllabus = await syllabusRepository.findById(id);
     if (!syllabus) {
       throw new NotFoundError('Syllabus not found');
@@ -46,7 +48,10 @@ export class SyllabusService {
       throw new BadRequestError('Invalid class');
     }
 
-    return syllabusRepository.update(id, data);
+    return syllabusRepository.update(id, {
+      ...data,
+      updatedBy: { userId: user.id, name: user.name, role: user.role }
+    });
   }
 
   async delete(id, instituteId) {
@@ -63,7 +68,7 @@ export class SyllabusService {
     return syllabusRepository.delete(id);
   }
 
-  async createSubject(syllabusId, instituteId, data) {
+  async createSubject(syllabusId, instituteId, data, user) {
     const syllabus = await syllabusRepository.findById(syllabusId);
     if (!syllabus) {
       throw new NotFoundError('Syllabus not found');
@@ -74,10 +79,14 @@ export class SyllabusService {
       throw new BadRequestError('Invalid syllabus');
     }
 
-    return syllabusRepository.createSubject(syllabusId, data);
+    return syllabusRepository.createSubject(syllabusId, {
+      ...data,
+      createdBy: { userId: user.id, name: user.name, role: user.role },
+      updatedBy: { userId: user.id, name: user.name, role: user.role }
+    });
   }
 
-  async createTopic(subjectId, instituteId, data) {
+  async createTopic(subjectId, instituteId, data, user) {
     const subject = await syllabusRepository.getSubjectById(subjectId);
     if (!subject) {
       throw new NotFoundError('Subject not found');
@@ -89,10 +98,14 @@ export class SyllabusService {
       throw new BadRequestError('Invalid subject');
     }
 
-    return syllabusRepository.createTopic(subjectId, data);
+    return syllabusRepository.createTopic(subjectId, {
+      ...data,
+      createdBy: { userId: user.id, name: user.name, role: user.role },
+      updatedBy: { userId: user.id, name: user.name, role: user.role }
+    });
   }
 
-  async updateTopic(topicId, instituteId, data) {
+  async updateTopic(topicId, instituteId, data, user) {
     const topic = await Topic.findById(topicId);
     if (!topic) {
       throw new NotFoundError('Topic not found');
@@ -105,7 +118,10 @@ export class SyllabusService {
       throw new BadRequestError('Invalid topic');
     }
 
-    return syllabusRepository.updateTopic(topicId, data);
+    return syllabusRepository.updateTopic(topicId, {
+      ...data,
+      updatedBy: { userId: user.id, name: user.name, role: user.role }
+    });
   }
 
   async deleteTopic(topicId, instituteId) {
@@ -153,7 +169,7 @@ export class SyllabusService {
     return syllabusRepository.deleteSubject(subjectId);
   }
 
-  async updateSubject(subjectId, instituteId, data) {
+  async updateSubject(subjectId, instituteId, data, user) {
     const subject = await syllabusRepository.getSubjectById(subjectId);
     if (!subject) {
       throw new NotFoundError('Subject not found');
@@ -165,7 +181,10 @@ export class SyllabusService {
       throw new BadRequestError('Invalid subject');
     }
 
-    return syllabusRepository.updateSubject(subjectId, data);
+    return syllabusRepository.updateSubject(subjectId, {
+      ...data,
+      updatedBy: { userId: user.id, name: user.name, role: user.role }
+    });
   }
 }
 

@@ -32,6 +32,14 @@ const userSchema = new mongoose.Schema({
   },
   tempPin: {
     type: String
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher'
+  },
+  instituteId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true

@@ -15,14 +15,20 @@ export const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwtSecret);
     
     const user = await User.findById(decoded.userId)
-      .select('_id mobile role name instituteName isActive')
+      .select('_id mobile role name instituteName isActive instituteId')
       .lean();
 
     if (!user || !user.isActive) {
       throw new UnauthorizedError('User not found or inactive');
     }
 
-    req.user = { ...user, id: user._id.toString() };
+    req.user = {
+      ...user,
+      id: user._id.toString(),
+      instituteId: user.role === 'teacher'
+        ? (user.instituteId?.toString() || user._id.toString())
+        : user._id.toString()
+    };
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {

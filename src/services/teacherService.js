@@ -1,14 +1,22 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { config } from '../config/index.js';
 import teacherRepository from '../repositories/teacherRepository.js';
+import userRepository from '../repositories/userRepository.js';
 import { UnauthorizedError, ConflictError, NotFoundError } from '../utils/errors.js';
 
 export class TeacherService {
   async register(instituteId, data) {
-    const { teacherName, joiningDate, subject, mobile, qualification, email } = data;
+    const { teacherName, joiningDate, subject, mobile, qualification, email, password } = data;
 
     const existingTeacher = await teacherRepository.findByMobile(mobile);
     if (existingTeacher) {
       throw new ConflictError('Teacher mobile already registered');
+    }
+
+    const existingUser = await userRepository.findByMobile(mobile);
+    if (existingUser) {
+      throw new ConflictError('Mobile number already registered as user');
     }
 
     const teacher = await teacherRepository.create({
@@ -22,25 +30,50 @@ export class TeacherService {
       instituteId
     });
 
+    const hashedPassword = await bcrypt.hash(password || mobile, 12);
+
+    await userRepository.create({
+      mobile,
+      password: hashedPassword,
+      role: 'teacher',
+      name: teacherName,
+      email,
+      teacherId: teacher.id,
+      instituteId
+    });
+
     return this.sanitizeTeacher(teacher);
   }
 
   async login(mobile, password) {
-    const teacher = await teacherRepository.findByMobile(mobile);
-    if (!teacher) {
+    const user = await userRepository.findByMobile(mobile);
+    if (!user || user.role !== 'teacher') {
       throw new UnauthorizedError('Invalid mobile or password');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, teacher.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid mobile or password');
     }
 
-    if (!teacher.isActive) {
+    if (!user.isActive) {
       throw new UnauthorizedError('Account is deactivated');
     }
 
-    return this.sanitizeTeacher(teacher);
+    const teacher = await teacherRepository.findByMobile(mobile);
+
+    const token = this.generateToken(user.id);
+    const refreshToken = this.generateRefreshToken(user.id);
+
+    return { teacher: this.sanitizeTeacher(teacher), token, refreshToken };
+  }
+
+  generateToken(userId) {
+    return jwt.sign({ userId }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+  }
+
+  generateRefreshToken(userId) {
+    return jwt.sign({ userId }, config.jwtRefreshSecret, { expiresIn: config.jwtRefreshExpiresIn });
   }
 
   async getById(id) {

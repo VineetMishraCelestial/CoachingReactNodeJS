@@ -6,21 +6,32 @@ Production: https://your-domain.com/api/v1
 Development: http://localhost:3000/api/v1
 ```
 
+## Authentication
+All protected endpoints require an **Authorization** header:
+```
+Authorization: Bearer <token>
+```
+
+Tokens are obtained via `POST /auth/login` or `POST /teachers/login`.
+
 ---
 
 ## Table of Contents
 1. [Authentication](#1-authentication)
-2. [User Profile](#2-user-profile)
-3. [Dashboard](#3-dashboard)
-4. [Classes](#4-classes)
-5. [Teachers](#5-teachers)
+2. [Teacher Management (Admin)](#2-teacher-management-admin)
+3. [User Profile](#3-user-profile)
+4. [Dashboard](#4-dashboard)
+5. [Classes](#5-classes)
 6. [Students](#6-students)
 7. [Attendance](#7-attendance)
 8. [Fees](#8-fees)
 9. [Syllabus](#9-syllabus)
 10. [Homework](#10-homework)
 11. [Notices](#11-notices)
-12. [Error Handling](#12-error-handling)
+12. [Parent Portal](#12-parent-portal)
+13. [Role-Based Access Summary](#13-role-based-access-summary)
+14. [Error Handling](#14-error-handling)
+15. [Environment Variables](#15-environment-variables)
 
 ---
 
@@ -28,6 +39,8 @@ Development: http://localhost:3000/api/v1
 
 ### POST /auth/register
 Register a new user (Institute or Teacher).
+
+**Access:** Public
 
 **Request:**
 ```json
@@ -76,7 +89,9 @@ Register a new user (Institute or Teacher).
 ---
 
 ### POST /auth/login
-Login with mobile and password.
+Login with mobile and password (for Institute users and Teachers registered via `/auth/register`).
+
+**Access:** Public
 
 **Request:**
 ```json
@@ -85,12 +100,6 @@ Login with mobile and password.
   "password": "password123"
 }
 ```
-
-**Parameters:**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| mobile | string | Yes | 10 digit mobile number |
-| password | string | Yes | User password |
 
 **Response (200):**
 ```json
@@ -118,6 +127,8 @@ Login with mobile and password.
 ### POST /auth/refresh
 Refresh access token using refresh token.
 
+**Access:** Public
+
 **Request:**
 ```json
 {
@@ -139,28 +150,10 @@ Refresh access token using refresh token.
 
 ---
 
-### POST /auth/logout
-Logout user (invalidate tokens).
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Logout successful",
-  "data": null
-}
-```
-
----
-
-## 2. User Profile
-
 ### GET /auth/me
 Get current logged-in user profile.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Response (200):**
 ```json
@@ -182,12 +175,266 @@ Get current logged-in user profile.
 
 ---
 
-## 3. Dashboard
+### POST /auth/logout
+Logout user (invalidate tokens).
+
+**Access:** Authenticated (Institute, Teacher)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Logout successful",
+  "data": null
+}
+```
+
+---
+
+### PUT /auth/profile
+Update profile.
+
+**Access:** Authenticated (Institute, Teacher)
+
+**Request:**
+```json
+{
+  "name": "Vin Updated",
+  "email": "vin@example.com",
+  "instituteName": "Updated Coaching",
+  "city": "Mumbai",
+  "password": "newpassword123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "id": "uuid",
+    "mobile": "9876543210",
+    "role": "institute",
+    "name": "Vin Updated",
+    "instituteName": "Updated Coaching",
+    "city": "Mumbai",
+    "isActive": true
+  }
+}
+```
+
+---
+
+## 2. Teacher Management (Admin)
+
+### POST /teachers (Register Teacher)
+Admin registers a teacher. Creates both a **Teacher** record and a **User** record (role: "teacher") with login credentials. The teacher can then login via `POST /teachers/login`.
+
+**Access:** Authenticated (Institute only)
+
+**Request:**
+```json
+{
+  "teacherName": "Ramesh Kumar",
+  "joiningDate": "2024-04-01",
+  "subject": "Science",
+  "mobile": "9876543211",
+  "qualification": "M.Sc",
+  "email": "ramesh@example.com",
+  "password": "temp123"
+}
+```
+
+**Parameters:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| teacherName | string | Yes | Teacher full name |
+| joiningDate | string (YYYY-MM-DD) | Yes | Joining date |
+| subject | string | Yes | Subject name |
+| mobile | string | Yes | 10 digit mobile (unique) |
+| qualification | string | Yes | Teacher qualification |
+| email | string | Yes | Email address |
+| password | string | No | Login password (min 6 chars). Defaults to mobile number if not provided |
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Teacher registered successfully",
+  "data": {
+    "id": "uuid",
+    "name": "Ramesh Kumar",
+    "joiningDate": "2024-04-01T00:00:00.000Z",
+    "subject": "Science",
+    "mobile": "9876543211",
+    "qualification": "M.Sc",
+    "email": "ramesh@example.com",
+    "isActive": true,
+    "classCount": 0,
+    "classes": []
+  }
+}
+```
+
+---
+
+### POST /teachers/login (Teacher Login)
+Teacher login using mobile and password set during registration.
+
+**Access:** Public
+
+**Request:**
+```json
+{
+  "mobile": "9876543211",
+  "password": "temp123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Teacher login successful",
+  "data": {
+    "teacher": {
+      "id": "uuid",
+      "name": "Ramesh Kumar",
+      "subject": "Science",
+      "mobile": "9876543211",
+      "qualification": "M.Sc",
+      "email": "ramesh@example.com",
+      "isActive": true,
+      "classCount": 2,
+      "classes": [
+        { "id": "uuid", "name": "Class 8", "subject": "Science" }
+      ]
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Note:** The JWT token returned here can be used to access all teacher-accessible endpoints (classes, students read-only, attendance, syllabus). The `role` in the token is `"teacher"`.
+
+---
+
+### GET /teachers
+Get all teachers in the institute.
+
+**Access:** Authenticated (Institute only)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Teachers retrieved",
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Ramesh Kumar",
+      "joiningDate": "2024-04-01T00:00:00.000Z",
+      "subject": "Science",
+      "mobile": "9876543211",
+      "qualification": "M.Sc",
+      "email": "ramesh@example.com",
+      "classCount": 2,
+      "classes": []
+    }
+  ]
+}
+```
+
+---
+
+### GET /teachers/:id
+Get teacher details.
+
+**Access:** Authenticated (Institute only)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Teacher retrieved",
+  "data": {
+    "id": "uuid",
+    "name": "Ramesh Kumar",
+    "joiningDate": "2024-04-01T00:00:00.000Z",
+    "subject": "Science",
+    "mobile": "9876543211",
+    "qualification": "M.Sc",
+    "email": "ramesh@example.com",
+    "classCount": 2,
+    "classes": [
+      { "id": "uuid", "name": "Class 8", "subject": "Science" }
+    ]
+  }
+}
+```
+
+---
+
+### PUT /teachers/:id
+Update teacher.
+
+**Access:** Authenticated (Institute only)
+
+**Request:**
+```json
+{
+  "teacherName": "Ramesh Kumar Sir",
+  "subject": "Physics",
+  "qualification": "M.Phil",
+  "email": "ramesh.kumar@example.com",
+  "password": "newpass123"
+}
+```
+
+---
+
+### DELETE /teachers/:id
+Soft delete teacher.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### GET /teachers/trash
+Get soft-deleted teachers.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### POST /teachers/:id/restore
+Restore soft-deleted teacher.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### DELETE /teachers/:id/permanent
+Permanently delete teacher.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+## 3. User Profile
+
+(Same as GET /auth/me — see Authentication section)
+
+---
+
+## 4. Dashboard
 
 ### GET /dashboard/stats
 Get dashboard statistics.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -210,7 +457,7 @@ Get dashboard statistics.
 ### GET /dashboard/overview
 Get dashboard overview (classes, pending fees, recent notices).
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -256,12 +503,12 @@ Get dashboard overview (classes, pending fees, recent notices).
 
 ---
 
-## 4. Classes
+## 5. Classes
 
 ### POST /classes
 Create a new class.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -311,7 +558,7 @@ Create a new class.
 ### GET /classes
 Get all classes.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Response (200):**
 ```json
@@ -336,7 +583,7 @@ Get all classes.
 ### GET /classes/:id
 Get class details.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Response (200):**
 ```json
@@ -366,7 +613,7 @@ Get class details.
 ### PUT /classes/:id
 Update class.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -384,25 +631,37 @@ Update class.
 ---
 
 ### DELETE /classes/:id
-Delete class (soft delete).
+Soft delete class.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Class deleted",
-  "data": null
-}
-```
+---
+
+### GET /classes/trash
+Get soft-deleted classes.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### POST /classes/:id/restore
+Restore soft-deleted class.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### DELETE /classes/:id/permanent
+Permanently delete class.
+
+**Access:** Authenticated (Institute only)
 
 ---
 
 ### GET /classes/stats
 Get class statistics.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -419,139 +678,12 @@ Get class statistics.
 
 ---
 
-## 5. Teachers
-
-### POST /teachers
-Add a new teacher.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Request:**
-```json
-{
-  "teacherName": "Ramesh Kumar",
-  "joiningDate": "2024-04-01",
-  "subject": "Science",
-  "mobile": "9876543211",
-  "qualification": "M.Sc",
-  "email": "ramesh@example.com"
-}
-```
-
-**Parameters:**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| teacherName | string | Yes | Teacher full name |
-| joiningDate | string (YYYY-MM-DD) | Yes | Joining date |
-| subject | string | Yes | Subject name |
-| mobile | string | Yes | 10 digit mobile (unique) |
-| qualification | string | Yes | Teacher qualification |
-| email | string | Yes | Email address |
-
-**Response (201):**
-```json
-{
-  "success": true,
-  "message": "Teacher registered successfully",
-  "data": {
-    "id": "uuid",
-    "name": "Ramesh Kumar",
-    "joiningDate": "2024-04-01T00:00:00.000Z",
-    "subject": "Science",
-    "mobile": "9876543211",
-    "qualification": "M.Sc",
-    "email": "ramesh@example.com",
-    "isActive": true
-  }
-}
-```
-
----
-
-### GET /teachers
-Get all teachers.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Teachers retrieved",
-  "data": [
-    {
-      "id": "uuid",
-      "name": "Ramesh Kumar",
-      "joiningDate": "2024-04-01T00:00:00.000Z",
-      "subject": "Science",
-      "mobile": "9876543211",
-      "qualification": "M.Sc",
-      "email": "ramesh@example.com",
-      "_count": { "classes": 2 }
-    }
-  ]
-}
-```
-
----
-
-### GET /teachers/:id
-Get teacher details.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Teacher retrieved",
-  "data": {
-    "id": "uuid",
-    "name": "Ramesh Kumar",
-    "joiningDate": "2024-04-01T00:00:00.000Z",
-    "subject": "Science",
-    "mobile": "9876543211",
-    "qualification": "M.Sc",
-    "email": "ramesh@example.com",
-    "classes": [
-      { "id": "uuid", "name": "Class 8", "subject": "Science" }
-    ]
-  }
-}
-```
-
----
-
-### PUT /teachers/:id
-Update teacher.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Request:**
-```json
-{
-  "teacherName": "Ramesh Kumar Sir",
-  "subject": "Physics",
-  "qualification": "M.Phil",
-  "email": "ramesh.kumar@example.com"
-}
-```
-
----
-
-### DELETE /teachers/:id
-Delete teacher.
-
-**Headers:** `Authorization: Bearer <token>`
-
----
-
 ## 6. Students
 
 ### POST /students
 Add a new student.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -598,7 +730,7 @@ Add a new student.
 ### GET /students
 Get all students.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Query Parameters:**
 | Param | Type | Description |
@@ -637,7 +769,7 @@ Get all students.
 ### GET /students/:id
 Get student details with fee history.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Response (200):**
 ```json
@@ -670,7 +802,7 @@ Get student details with fee history.
 ### GET /students/:id/attendance
 Get student attendance statistics.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Query Parameters:**
 | Param | Type | Description |
@@ -696,7 +828,7 @@ Get student attendance statistics.
 ### PUT /students/:id
 Update student.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -711,9 +843,30 @@ Update student.
 ---
 
 ### DELETE /students/:id
-Delete student (soft delete).
+Soft delete student.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
+
+---
+
+### GET /students/trash
+Get soft-deleted students.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### POST /students/:id/restore
+Restore soft-deleted student.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### DELETE /students/:id/permanent
+Permanently delete student.
+
+**Access:** Authenticated (Institute only)
 
 ---
 
@@ -722,7 +875,7 @@ Delete student (soft delete).
 ### POST /attendance
 Mark attendance for students.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Request:**
 ```json
@@ -764,7 +917,7 @@ Mark attendance for students.
 ### GET /attendance/class
 Get class attendance for a date.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Query Parameters:**
 | Param | Type | Required | Description |
@@ -786,28 +939,26 @@ Get class attendance for a date.
 
 ---
 
-### GET /attendance/class/stats
-Get class attendance statistics.
+### GET /attendance/class/date
+Get class attendance for a specific date.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Query Parameters:**
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
 | classId | string (UUID) | Yes | Class UUID |
-| month | integer | No | Month (default: current month) |
-| year | integer | No | Year (default: current year) |
+| date | string (ISO date) | No | Date (default: today) |
 
 **Response (200):**
 ```json
 {
   "success": true,
-  "message": "Class attendance stats retrieved",
-  "data": {
-    "present": 22,
-    "absent": 4,
-    "late": 2
-  }
+  "message": "Attendance retrieved",
+  "data": [
+    { "studentId": "uuid", "name": "Rahul Sharma", "status": "present" },
+    { "studentId": "uuid", "name": "Priya Singh", "status": "absent" }
+  ]
 }
 ```
 
@@ -816,7 +967,7 @@ Get class attendance statistics.
 ### GET /attendance/student
 Get student attendance records.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Query Parameters:**
 | Param | Type | Required | Description |
@@ -845,7 +996,7 @@ Get student attendance records.
 ### POST /fees
 Create fee record.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -871,10 +1022,24 @@ Create fee record.
 
 ---
 
+### POST /fees/generate
+Generate monthly fees for all students in the institute.
+
+**Access:** Authenticated (Institute only)
+
+---
+
+### POST /fees/generate-advance
+Generate advance fees.
+
+**Access:** Authenticated (Institute only)
+
+---
+
 ### GET /fees
 Get all fees with filters.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Query Parameters:**
 | Param | Type | Description |
@@ -889,7 +1054,7 @@ Get all fees with filters.
 ### GET /fees/stats
 Get fee statistics.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -910,7 +1075,7 @@ Get fee statistics.
 ### GET /fees/class-wise
 Get class-wise fee summary.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -936,7 +1101,7 @@ Get class-wise fee summary.
 ### GET /fees/student/:studentId
 Get student fee history.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -968,10 +1133,17 @@ Get student fee history.
 
 ---
 
+### GET /fees/class/:classId
+Get fees by class.
+
+**Access:** Authenticated (Institute only)
+
+---
+
 ### PUT /fees/:id/payment
 Record payment for fee.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -998,10 +1170,12 @@ Record payment for fee.
 
 ## 9. Syllabus
 
+**Audit Trail:** All create/update operations on syllabus, subjects, and topics automatically record `createdBy` and `updatedBy` fields containing `{ userId, name, role }`. This allows the admin to see who made what changes.
+
 ### POST /syllabus
 Add syllabus topic.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Request:**
 ```json
@@ -1019,12 +1193,30 @@ Add syllabus topic.
 | name | string | Yes | Topic/chapter name |
 | status | string | No | "pending" (default), "ongoing", or "done" |
 
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Syllabus created",
+  "data": {
+    "id": "uuid",
+    "name": "Chapter 1: Force & Motion",
+    "status": "pending",
+    "classId": "uuid",
+    "createdBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" },
+    "updatedBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" },
+    "createdAt": "2024-04-05T10:00:00.000Z",
+    "updatedAt": "2024-04-05T10:00:00.000Z"
+  }
+}
+```
+
 ---
 
 ### GET /syllabus/class/:classId
 Get class syllabus with progress.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Response (200):**
 ```json
@@ -1037,13 +1229,29 @@ Get class syllabus with progress.
         "id": "uuid",
         "name": "Chapter 1: Force & Motion",
         "status": "done",
-        "createdAt": "2024-04-01T00:00:00.000Z"
-      },
-      {
-        "id": "uuid",
-        "name": "Chapter 2: Light & Shadow",
-        "status": "ongoing",
-        "createdAt": "2024-04-05T00:00:00.000Z"
+        "classId": "uuid",
+        "createdBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" },
+        "updatedBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" },
+        "createdAt": "2024-04-01T00:00:00.000Z",
+        "updatedAt": "2024-04-05T10:00:00.000Z",
+        "subjects": [
+          {
+            "id": "uuid",
+            "name": "Physics",
+            "status": "ongoing",
+            "createdBy": { "userId": "uuid", "name": "Admin", "role": "institute" },
+            "updatedBy": { "userId": "uuid", "name": "Admin", "role": "institute" },
+            "topics": [
+              {
+                "id": "uuid",
+                "name": "Newton's Laws",
+                "isCompleted": true,
+                "createdBy": { "userId": "uuid", "name": "Admin", "role": "institute" },
+                "updatedBy": { "userId": "uuid", "name": "Admin", "role": "institute" }
+              }
+            ]
+          }
+        ]
       }
     ],
     "stats": {
@@ -1059,10 +1267,17 @@ Get class syllabus with progress.
 
 ---
 
+### GET /syllabus/:id
+Get syllabus by ID.
+
+**Access:** Authenticated (Institute, Teacher)
+
+---
+
 ### PUT /syllabus/:id
 Update syllabus topic.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
 
 **Request:**
 ```json
@@ -1077,7 +1292,113 @@ Update syllabus topic.
 ### DELETE /syllabus/:id
 Delete syllabus topic.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute, Teacher)
+
+---
+
+### POST /syllabus/:syllabusId/subjects
+Add subject to syllabus.
+
+**Access:** Authenticated (Institute, Teacher)
+
+**Request:**
+```json
+{
+  "name": "Physics",
+  "status": "pending"
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Subject added",
+  "data": {
+    "id": "uuid",
+    "name": "Physics",
+    "status": "pending",
+    "syllabusId": "uuid",
+    "createdBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" },
+    "updatedBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" }
+  }
+}
+```
+
+---
+
+### PUT /syllabus/subjects/:subjectId
+Update subject.
+
+**Access:** Authenticated (Institute, Teacher)
+
+**Request:**
+```json
+{
+  "name": "Advanced Physics",
+  "status": "done"
+}
+```
+
+---
+
+### DELETE /syllabus/subjects/:subjectId
+Delete subject (also deletes its topics).
+
+**Access:** Authenticated (Institute, Teacher)
+
+---
+
+### POST /syllabus/subjects/:subjectId/topics
+Add topic to subject.
+
+**Access:** Authenticated (Institute, Teacher)
+
+**Request:**
+```json
+{
+  "name": "Newton's Laws",
+  "isCompleted": false
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Topic added",
+  "data": {
+    "id": "uuid",
+    "name": "Newton's Laws",
+    "isCompleted": false,
+    "subjectId": "uuid",
+    "createdBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" },
+    "updatedBy": { "userId": "uuid", "name": "Ramesh Kumar", "role": "teacher" }
+  }
+}
+```
+
+---
+
+### PUT /syllabus/topics/:topicId
+Update topic.
+
+**Access:** Authenticated (Institute, Teacher)
+
+**Request:**
+```json
+{
+  "name": "Newton's Laws of Motion",
+  "isCompleted": true
+}
+```
+
+---
+
+### DELETE /syllabus/topics/:topicId
+Delete topic.
+
+**Access:** Authenticated (Institute, Teacher)
 
 ---
 
@@ -1086,7 +1407,7 @@ Delete syllabus topic.
 ### POST /homework
 Add homework.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -1111,7 +1432,7 @@ Add homework.
 ### GET /homework/class/:classId
 Get class homework.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Query Parameters:**
 | Param | Type | Description |
@@ -1142,7 +1463,7 @@ Get class homework.
 ### GET /homework/:id
 Get homework details with submissions.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Response (200):**
 ```json
@@ -1174,7 +1495,7 @@ Get homework details with submissions.
 ### PUT /homework/:id
 Update homework.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -1191,14 +1512,14 @@ Update homework.
 ### DELETE /homework/:id
 Delete homework.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 ---
 
 ### POST /homework/submit
 Submit homework by student.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -1215,7 +1536,7 @@ Submit homework by student.
 ### POST /notices
 Create notice.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Request:**
 ```json
@@ -1242,7 +1563,7 @@ Create notice.
 ### GET /notices
 Get all notices.
 
-**Headers:** `Authorization: Bearer <token>`
+**Access:** Authenticated (Institute only)
 
 **Query Parameters:**
 | Param | Type | Description |
@@ -1273,19 +1594,73 @@ Get all notices.
 ### GET /notices/:id
 Get notice by ID.
 
+**Access:** Authenticated (Institute only)
+
 ---
 
 ### PUT /notices/:id
 Update notice.
+
+**Access:** Authenticated (Institute only)
 
 ---
 
 ### DELETE /notices/:id
 Delete notice.
 
+**Access:** Authenticated (Institute only)
+
 ---
 
-## 12. Error Handling
+## 12. Parent Portal
+
+All parent endpoints require authentication (parent role).
+
+### GET /parent/children
+Get parent's linked children.
+
+---
+
+### GET /parent/children/:studentId/attendance
+Get child attendance.
+
+---
+
+### GET /parent/children/:studentId/fees
+Get child fee history.
+
+---
+
+### GET /parent/children/:studentId/syllabus
+Get child syllabus.
+
+---
+
+### PUT /parent/profile
+Update parent profile.
+
+---
+
+## 13. Role-Based Access Summary
+
+| Resource | Institute (Admin) | Teacher |
+|----------|:-:|:-:|
+| Auth (login/register) | ✅ | ✅ (via `/teachers/login`) |
+| Profile (me/update) | ✅ | ✅ |
+| **Classes** | **Full CRUD** | **Read only** (GET list, GET by id) |
+| **Students** | **Full CRUD** | **Read only** (GET list, GET by id, GET attendance stats) |
+| **Attendance** | **Full** | **Full** (mark + view) |
+| **Syllabus** | **Full CRUD** | **Full CRUD** (with audit trail) |
+| Teachers | Full CRUD | ❌ |
+| Fees | Full CRUD | ❌ |
+| Homework | Full CRUD | ❌ |
+| Notices | Full CRUD | ❌ |
+| Dashboard | Full | ❌ |
+| Parent Portal | ❌ | ❌ |
+
+---
+
+## 14. Error Handling
 
 ### Error Response Format
 ```json
@@ -1296,13 +1671,13 @@ Delete notice.
 ```
 
 ### HTTP Status Codes
-
 | Code | Description | Example |
 |------|-------------|---------|
 | 200 | Success | Login successful |
 | 201 | Created | Student added |
 | 400 | Bad Request | Validation failed |
 | 401 | Unauthorized | Invalid/expired token |
+| 403 | Forbidden | Insufficient role permissions |
 | 404 | Not Found | Resource not found |
 | 409 | Conflict | Mobile already registered |
 | 500 | Server Error | Internal error |
@@ -1319,286 +1694,17 @@ Delete notice.
 }
 ```
 
----
-
-## Frontend Implementation Guide
-
-### Token Storage & Auto-Login
-
-```javascript
-// api.js - API Helper
-const API_BASE = 'https://your-domain.com/api/v1';
-
-class ApiClient {
-  constructor() {
-    this.token = localStorage.getItem('token');
-    this.refreshToken = localStorage.getItem('refreshToken');
-  }
-
-  async request(endpoint, options = {}) {
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers
-    };
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers
-      });
-
-      // If unauthorized, try refresh token
-      if (response.status === 401) {
-        const refreshed = await this.refreshAccessToken();
-        if (refreshed) {
-          headers['Authorization'] = `Bearer ${this.token}`;
-          return fetch(`${API_BASE}${endpoint}`, { ...options, headers });
-        }
-        // Logout if refresh failed
-        this.logout();
-        window.location.href = '/login';
-      }
-
-      return response;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  }
-
-  async refreshAccessToken() {
-    try {
-      const response = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: this.refreshToken })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        this.token = data.data.token;
-        this.refreshToken = data.data.refreshToken;
-        localStorage.setItem('token', this.token);
-        localStorage.setItem('refreshToken', this.refreshToken);
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  }
-
-  // Auth
-  async login(mobile, password) {
-    const response = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ mobile, password })
-    });
-    const data = await response.json();
-    if (data.success) {
-      this.token = data.data.token;
-      this.refreshToken = data.data.refreshToken;
-      localStorage.setItem('token', this.token);
-      localStorage.setItem('refreshToken', this.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
-    }
-    return data;
-  }
-
-  async register(userData) {
-    const response = await this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData)
-    });
-    const data = await response.json();
-    if (data.success) {
-      this.token = data.data.token;
-      this.refreshToken = data.data.refreshToken;
-      localStorage.setItem('token', this.token);
-      localStorage.setItem('refreshToken', this.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
-    }
-    return data;
-  }
-
-  logout() {
-    this.request('/auth/logout', { method: 'POST' });
-    this.token = null;
-    this.refreshToken = null;
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-  }
-
-  getUser() {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  }
-
-  // Dashboard
-  async getDashboardStats() {
-    const response = await this.request('/dashboard/stats');
-    return response.json();
-  }
-
-  async getDashboardOverview() {
-    const response = await this.request('/dashboard/overview');
-    return response.json();
-  }
-
-  // Classes
-  async getClasses() {
-    const response = await this.request('/classes');
-    return response.json();
-  }
-
-  async createClass(data) {
-    const response = await this.request('/classes', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return response.json();
-  }
-
-  async updateClass(id, data) {
-    const response = await this.request(`/classes/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
-    return response.json();
-  }
-
-  async deleteClass(id) {
-    const response = await this.request(`/classes/${id}`, {
-      method: 'DELETE'
-    });
-    return response.json();
-  }
-
-  // Students
-  async getStudents(classId = null) {
-    let url = '/students';
-    if (classId) url += `?classId=${classId}`;
-    const response = await this.request(url);
-    return response.json();
-  }
-
-  async createStudent(data) {
-    const response = await this.request('/students', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return response.json();
-  }
-
-  // Attendance
-  async markAttendance(data) {
-    const response = await this.request('/attendance', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return response.json();
-  }
-
-  async getClassAttendance(classId, date) {
-    const response = await this.request(`/attendance/class?classId=${classId}&date=${date}`);
-    return response.json();
-  }
-
-  // Fees
-  async getFeeStats() {
-    const response = await this.request('/fees/stats');
-    return response.json();
-  }
-
-  async recordPayment(feeId, paymentMode) {
-    const response = await this.request(`/fees/${feeId}/payment`, {
-      method: 'PUT',
-      body: JSON.stringify({ paymentMode })
-    });
-    return response.json();
-  }
-}
-
-export const api = new ApiClient();
-```
-
-### App Initialization (Auto-Login)
-
-```javascript
-// app.js
-import { api } from './api';
-
-async function initApp() {
-  // Check if user is logged in
-  if (api.token && api.refreshToken) {
-    try {
-      // Verify token is still valid
-      const response = await fetch(`${API_BASE}/auth/me`, {
-        headers: { 'Authorization': `Bearer ${api.token}` }
-      });
-
-      if (response.ok) {
-        // Token is valid, proceed to dashboard
-        const data = await response.json();
-        localStorage.setItem('user', JSON.stringify(data.data));
-        showDashboard();
-      } else if (response.status === 401) {
-        // Try refresh token
-        const refreshed = await api.refreshAccessToken();
-        if (refreshed) {
-          showDashboard();
-        } else {
-          showLogin();
-        }
-      } else {
-        showLogin();
-      }
-    } catch (error) {
-      console.error('Init error:', error);
-      showLogin();
-    }
-  } else {
-    showLogin();
-  }
-}
-
-initApp();
-```
-
-### Login Screen
-
-```javascript
-async function handleLogin() {
-  const mobile = document.getElementById('mobile').value;
-  const password = document.getElementById('password').value;
-
-  const result = await api.login(mobile, password);
-
-  if (result.success) {
-    showDashboard();
-  } else {
-    alert(result.message);
-  }
-}
-```
-
-### Logout
-
-```javascript
-function handleLogout() {
-  api.logout();
-  showLogin();
+### Forbidden Error Response (403)
+```json
+{
+  "success": false,
+  "message": "Access denied. Insufficient permissions."
 }
 ```
 
 ---
 
-## Environment Variables
+## 15. Environment Variables
 
 ### Development (.env)
 ```env
